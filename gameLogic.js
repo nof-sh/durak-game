@@ -1,67 +1,65 @@
-// gameLogic.js
-function createDeck() {
-   // Implementation here
-}
+
   
-function shuffleDeck(deck) {
-   // Implementation here
-}
-  
-function dealCards(deck, numCards) {
-    // Implementation here
-}
-  
-function drawCard(pot) {
-    // Implementation here
-}
-  
-function checkSameSuit(hand) {
-    // Implementation here
-}
-  
+function firstPlayerToStart(players, trumpCard) {
+    // determine the first player
+    let firstPlayer = players[0];
+    let lowestTrump = trumpCard.rank;
 
-module.exports = {
-    updateGameState: function(gameState, action) {
-      // Implement your game state update logic here
-    },
-    checkGameRules: function(gameState) {
-      // Implement your game rules checking logic here
-    },
-    startNewGame: function(players) {
-          // Create a deck of cards
-        const deck = createDeck();
-
-        // Shuffle the deck
-        shuffleDeck(deck);
-
-        // Distribute six cards to each player
-        for (let player of players) {
-            player.hand = dealCards(deck, 6);
-            // Check if every card in the hand has the same suit as the first card....
-            //.........if so, reshuffle and redistribute the cards.
-        }
-
-        // Create the pot with the remaining cards
-        const pot = deck;
-
-        // Draw the first card from the pot and set it as the trump card
-        const trumpCard = drawCard(pot);
-        pot.unshift(trumpCard);
-
-        // Check if any player has all cards of the same suit
-        for (let player of players) {
-            if (checkSameSuit(player.hand)) {
-            // If a player has all cards of the same suit, reshuffle and redistribute the cards
-            return startNewGame(players);
-            }
-        }
-
-        // Return the initial game state
-        return {
-            players,
-            pot,
-            trumpCard
-        };
+    for (let player of players) {
+        let playerLowestTrump = player.cards
+            .filter(card => card.suit === trumpCard.suit)
+            .sort((a,b) => a.rank - b.rank)[0];
         
+        if (playerLowestTrump && playerLowestTrump.rank < lowestTrump) {
+            firstPlayer = player;
+            lowestTrump = playerLowestTrump.rank;
+        }
     }
-  };
+
+    return firstPlayer;
+}
+
+function sameSuit(hand) {
+    if (hand.length === 0) {
+        return true; // an empty hand is trivially all the same suit
+    }
+
+    const suitToCheck = hand[0].suit;
+
+    for (let card of hand) {
+        if (card.suit !== suitToCheck) {
+            return false; // found a card of a different suit
+        }
+    }
+
+    return true; // all cards have the same suit
+}
+  
+function playTurn() {
+    // implement the logic for a single turn of the game
+}
+  
+function attack() {
+     // implement the logic for an attack
+}
+  
+function defend() {
+    // implement the logic for defending an attack
+}
+  
+function endTurn() {
+    // implement the logic for the end of a turn
+}
+  
+function checkGameOver() {
+    // check if the game is over
+}
+  
+ module.exports = {
+    firstPlayerToStart,
+    playTurn,
+    attack,
+    defend,
+    endTurn,
+    checkGameOver
+ } 

@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const admin = require('firebase-admin');
 const serviceAccount = require('serviceAccountKey.json');
-const gameLogic = require('gameLogic.js');
+const game = require('initGame.js');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
