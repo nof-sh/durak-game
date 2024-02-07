@@ -51,12 +51,19 @@ function endTurn() {
     // implement the logic for the end of a turn
 }
   
-function checkGameOver() {
+function checkGameOver(players) {
     // check if the game is over
+    for (let player of players) {
+        if (player.hand.length === 0) {
+            return (true, player.playerId)
+        }
+    }
+        return false;
 }
   
  module.exports = {
     firstPlayerToStart,
+    sameSuit,
     playTurn,
     attack,
     defend,

@@ -1,22 +1,25 @@
 // gameLogic.js
-const gameLogic = require('./gameLogic');
+const dorakLogic = require('./dorakLogic');
 const Deck = require('./cards');
 
   
-function shuffleDeck(deck) {
-   // Implementation here
-}
-  
 function dealCards(deck, numCards) {
-    // Implementation here
+    // deal numCards from the deck to the players.
+    // and remove the dealt cards from the deck.
+    let dealtCards = [];
+    for(let i = 0; i < numCards; i++) {
+        let randomIndex = Math.floor(Math.random() * deck.length);
+        let card = deck.splice(randomIndex, 1)[0];
+        dealtCards.push(card);
+    }
+    // return the dealt cards.
+    return dealtCards;
 }
   
 function drawCard(pot) {
     // Implementation here
 }
   
-
-
 function updateGameState (gameState, action){
 
 }
@@ -32,36 +35,23 @@ class Game {
     }
 
     startNewGame () {
-        this.deck.generateDeck();
-        this.dealInitialCards();
-        this.determineFirstPlayer();
+        this.deck.generateDeck(); // Create a deck of cards
+        this.trumpCard = drawCard(this.deck); // Draw the first card from the pot and set it as the trump card
         // other setup logic...
-        // Create a deck of cards
-
-        // Shuffle the deck
-        shuffleDeck(deck);
 
         // Distribute six cards to each player
         for (let player of players) {
             player.hand = dealCards(deck, 6);
-            // Check if every card in the hand has the same suit as the first card....
-            //.........if so, reshuffle and redistribute the cards.
-        }
-
-        // Create the pot with the remaining cards
-        this.pot = deck;
-
-        // Draw the first card from the pot and set it as the trump card
-        this.trumpCard = drawCard(pot);
-        this.pot.unshift(trumpCard);
-
-        // Check if any player has all cards of the same suit
-        for (let player of players) {
-            if (gameLogic.sameSuit(player.hand)) {
+            if (dorakLogic.sameSuit(player.hand)) {
                 // If a player has all cards of the same suit, reshuffle and redistribute the cards
                 return startNewGame();
             }
-        }  
+        }
+        // Create the pot with the remaining cards
+        this.pot = deck;
+        
+        // Determine the first player 
+        this.firstPlayer = dorakLogic.determineFirstPlayer(this.players, this.trumpCard);
 
         // Return the initial game state
         return {
@@ -70,7 +60,6 @@ class Game {
             trumpCard
         };
     } 
-
 }
 
 module.exports = {

@@ -18,16 +18,15 @@ app.post('/createGameRoom', async (req, res) => {
   
     const docRef = await db.collection('gameRooms').add(room); // Add the room to the collection.
     res.send({ roomId: docRef.id }); // send the room id to the client.
-  });
+});
 
-  app.post('/joinGameRoom', async (req, res) => {
+app.post('/joinGameRoom', async (req, res) => {
     const roomId = req.body.roomId; // the room id to join.
     const playerId = req.body.playerId; // the player id to add to the room.
   
     const roomRef = db.collection('gameRooms').doc(roomId); // point to the room document.
     const roomSnapshot = await roomRef.get(); // the room document itself.
     
-  
     if (!roomSnapshot.exists) { // if the room does not exist.
       res.status(404).send({ error: 'Room not found \n ' });
       console.log("The room does not exist. \n ");
@@ -48,7 +47,7 @@ app.post('/createGameRoom', async (req, res) => {
         console.log(`Player ${playerId} has joined the room.\n`);
 
     }
-  });
+});
 
 
 
