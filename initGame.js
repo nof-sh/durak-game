@@ -1,6 +1,6 @@
 // gameLogic.js
-const gameLogic = require('gameLogic.js');
-const Deck = require('cards.js');
+const gameLogic = require('./gameLogic');
+const Deck = require('./cards');
 
   
 function shuffleDeck(deck) {
@@ -61,8 +61,7 @@ class Game {
                 // If a player has all cards of the same suit, reshuffle and redistribute the cards
                 return startNewGame();
             }
-        }
-      
+        }  
 
         // Return the initial game state
         return {
