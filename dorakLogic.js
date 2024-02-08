@@ -3,16 +3,16 @@
 function firstPlayerToStart(players, trumpCard) {
     // determine the first player
     let firstPlayer = players[0];
-    let lowestTrump = trumpCard.rank;
+    let lowestTrump = trumpCard;
 
     for (let player of players) {
-        let playerLowestTrump = player.cards
-            .filter(card => card.suit === trumpCard.suit)
-            .sort((a,b) => a.rank - b.rank)[0];
+        let playerLowestTrump = player.getHand()
+            .filter(card => card.getSuit() === trumpCard.getSuit())
+            .sort((a,b) => a.getRank() - b.getRank())[0];
         
-        if (playerLowestTrump && playerLowestTrump.rank < lowestTrump) {
+        if (playerLowestTrump && playerLowestTrump.getRank() < lowestTrump) {
             firstPlayer = player;
-            lowestTrump = playerLowestTrump.rank;
+            lowestTrump = playerLowestTrump.getRank();
         }
     }
 
@@ -20,14 +20,11 @@ function firstPlayerToStart(players, trumpCard) {
 }
 
 function sameSuit(hand) {
-    if (hand.length === 0) {
-        return true; // an empty hand is trivially all the same suit
-    }
-
-    const suitToCheck = hand[0].suit;
+    // check if all the cards in the hand have the same suit
+    const suitToCheck = hand[0].getSuit();
 
     for (let card of hand) {
-        if (card.suit !== suitToCheck) {
+        if (card.getSuit() !== suitToCheck) {
             return false; // found a card of a different suit
         }
     }
@@ -35,27 +32,43 @@ function sameSuit(hand) {
     return true; // all cards have the same suit
 }
   
-function playTurn() {
+function playTurn(player, cardsOnTable, trumpCard, pot) {
     // implement the logic for a single turn of the game
 }
+
+function keepAttacking(playerCard, cardsOnTable) {
+    // implement the logic for continuing to attack.
+    // check if the player has any cards that can be used to attack.
+    // if they do, retturn the cards that can be used to attack.
+    // if they don't, return false.
+}
   
-function attack() {
+function attack(playerCard, cardsOnTable) {
      // implement the logic for an attack
 }
   
-function defend() {
+function checkDefend(playerCard, cardsOnTable, trumpCard) {
+    // implement the logic for check defending an attack
+    // check if the player has any cards that can be used to defend.
+    // if they do, return the cards that can be used to defend.
+    // if they don't, return false.
+}
+
+function defend(playerCard, cardsOnTable, trumpCard, pot) {
     // implement the logic for defending an attack
 }
   
-function endTurn() {
+function endTurn(players, pot, trumpCard) {
     // implement the logic for the end of a turn
 }
   
 function checkGameOver(players) {
     // check if the game is over
     for (let player of players) {
-        if (player.hand.length === 0) {
-            return (true, player.playerId)
+        // if a player has no cards left, the game is over
+        if (player.getHand().length === 0) {
+            console.log(`${player.getPlayerName()} has no cards left. \n ${player.getPlayerName()} won the game\n!`);
+            return (true, player.getPlayerName()); // return the name of the player who won.
         }
     }
         return false;

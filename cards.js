@@ -7,6 +7,22 @@ class Card {
       this.backCardImageUrl = 'images/backCard.png';
 
     }
+
+    getRank() {
+        return this.rank;
+    }
+
+    getSuit() {
+        return this.suit;
+    }
+
+    getFrontCardImageUrl() {
+        return this.frontCardImageUrl;
+    }
+
+    getBackCardImageUrl() {
+        return this.backCardImageUrl;
+    }
 }
 
 class Deck {
@@ -24,7 +40,14 @@ class Deck {
         }
       }
     }
+
+    getCards() {
+        return this.cards;
+    }
 }
 
-module.exports = Deck;
+module.exports = {
+  Deck,
+  Card
+}
 
