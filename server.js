@@ -49,6 +49,17 @@ app.post('/joinGameRoom', async (req, res) => {
     }
 });
 
+app.post('/playCard', (req, res) => {
+  try {
+      //let player = /* get the player from the request */
+      //let card = /* get the card from the request */
+      game.playCard(player, card);
+      res.status(200).send('Card played successfully');
+  } catch (error) {
+      res.status(400).send(error.message);
+  }
+});
+
 
 
 

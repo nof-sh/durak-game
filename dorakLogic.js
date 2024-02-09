@@ -16,7 +16,7 @@ function firstPlayerToStart(players, trumpCard) {
         }
     }
 
-    return firstPlayer;
+    return players.indexOf(firstPlayer);
 }
 
 function sameSuit(hand) {
@@ -24,14 +24,43 @@ function sameSuit(hand) {
     const suitToCheck = hand[0].getSuit();
 
     for (let card of hand) {
-        if (card.getSuit() !== suitToCheck) {
+        if (card.getSuit() != suitToCheck) {
             return false; // found a card of a different suit
         }
     }
 
     return true; // all cards have the same suit
 }
-  
+
+function isLegalMove(playerCard, cardsOnTable, trumpCard, playerIndex, firstPlayerIndex) {
+    // check if the move is legal
+
+    if (cardsOnTable.length === 0) {
+        return true; // no cards on the table, so any card is legal
+    }
+
+    const tableSuit = cardsOnTable[cardsOnTable.length - 1].getSuit();
+    const tableRank = cardsOnTable[cardsOnTable.length - 1].getRank();
+    const playerSuit = playerCard.getSuit();
+    const playerRank = playerCard.getRank();
+
+    if(playerIndex != firstPlayerIndex){
+        if (tableSuit === playerSuit) {
+            return playerRank > tableRank; // can only play a card of the same suit with a higher rank
+        } else if (playerSuit === trumpCard.getSuit()) {
+            return true; // can play any trump card
+        } else {
+            return false; // if the player doesn't have a card of the same suit of card on table or a trump card, the move is illegal.
+        }
+    } else{
+        if (cardsOnTable.some(card => card.getRank() === playerRank)){
+            return true;
+        }else{
+            return false;
+        }
+    }
+}
+
 function playTurn(player, cardsOnTable, trumpCard, pot) {
     // implement the logic for a single turn of the game
 }
@@ -77,6 +106,7 @@ function checkGameOver(players) {
  module.exports = {
     firstPlayerToStart,
     sameSuit,
+    isLegalMove,
     playTurn,
     attack,
     defend,
