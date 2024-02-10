@@ -23,6 +23,16 @@ class Card {
     getBackCardImageUrl() {
         return this.backCardImageUrl;
     }
+
+    toObject() {
+      // convert the card object to a plain JavaScript object
+        return {
+            rank: this.rank,
+            suit: this.suit,
+            frontCardImageUrl: this.frontCardImageUrl,
+            backCardImageUrl: this.backCardImageUrl
+        }
+    }
 }
 
 class Deck {

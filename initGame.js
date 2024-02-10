@@ -92,35 +92,68 @@ class Game {
 
     swapTurns () {
         // implement the logic for swapping turns
-        this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length;
-
-        if (this.currentPlayerIndex === this.firstPlayerToStart) {
-            if (this.cardsOnTable.length != 0 && !(this.players[this.firstPlayerToStart].getHand().some(card => dorakLogic.isLegalMove(card, this.cardsOnTable, this.trumpCard, this.firstPlayerToStart, this.firstPlayerToStart)))) {
-                // if the first player cannot play a card, the turn is over and the cards on the table are deleted.
-                this.cardsOnTable = [];
-                // the first player to start is the one who played the last card.
-                this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length;
-                // check that all the players have 6 cards in their hands - unless the pot is empty and the trump card is null.
-                for (let player of this.players) {
-                    takeCardsFromPot(player);
-                }
-
-            }
-            
+        
+        this.cardsOnTable = [];
+        // the turn is over and the next player is the first player to start.
+        this.moveToNextPlayer();
+        this.firstPlayerToStart = this.currentPlayerIndex;
+        this.players[this.currentPlayerIndex].setAttack(true);
+        // check that all the players have 6 cards in their hands - unless the pot is empty and the trump card is null.
+        for (let player of this.players) {
+            takeCardsFromPot(player);
         }
+            
     }
+
+    
 
     playCard (player, card) {
         // implement the logic for playing a card.
-        if (this.currentPlayerIndex !== this.players.indexOf(player)) {
+        // if the player is not the current player, throw an error.
+        if (this.getCurrentPlayer() !== player) {
             throw new Error('It is not your turn');
-        } else if (!dorakLogic.isLegalMove(card, this.cardsOnTable, this.trumpCard, this.players.indexOf(player), this.firstPlayerToStart)) {
+        // else if - the move is not legal, throw an error.
+        } else if (!dorakLogic.isLegalMove(card, this.cardsOnTable, this.trumpCard, this.getCurrentPlayer())) {
             throw new Error('Illegal move');
+        // else - the player plays the card and the turn is over.
         } else {
             this.cardsOnTable.push(player.playCard(card));
-            swapTurns();
-            
+            // if - the player make an attack, the turn is over. and the next player need to defend.
+            if (this.getCurrentPlayer().getAttack()){
+                this.getCurrentPlayer().setAttack(false);
+                this.moveToNextPlayer();
+            // else if - If the round is over (we go back to the player who started the round). Start a new round with a new starting player
+            }else if (this.getCurrentPlayer().getAttack() === false && this.getCurrentPlayer() === this.players[this.firstPlayerToStart]){
+                this.swapTurns();
+            // else - the player can keep play and now he naad to attack.
+            }else{
+                this.getCurrentPlayer().setAttack(true);
+            }
         }
+    }
+
+    takeCardsFromTable(player){
+        // add cards to the player's hand and clear the cards on the table.
+        // if - the cards on the table are empty, throw an error.
+        if (this.cardsOnTable.length === 0) {
+            throw new Error('There are no cards on the table');
+        // else if - the player is not the current player, throw an error.
+        }else if (this.currentPlayerIndex !== this.players.indexOf(player)) {
+            throw new Error('It is not your turn');
+        // else if - the player is the attacker, throw an error.
+        }else if (this.getCurrentPlayer().getAttack()){
+            throw new Error('You cannot take cards from the table, you must attack.');
+        // else - the player takes the cards from the table and the turn is over.
+        }else{
+            player.setHand(player.getHand().concat(this.cardsOnTable));
+            this.cardsOnTable = [];
+            this.moveToNextPlayer();
+            this.getCurrentPlayer().setAttack(true);
+        }
+    }
+
+    endTurn (players, pot, trumpCard) {
+
     }
 
     getCurrentPlayer () {
@@ -148,6 +181,30 @@ class Game {
 
     getPlayers(){
         return this.players;
+    }
+
+    getCurrentPlayer() {
+        return this.players[this.currentPlayerIndex];
+    }
+
+    moveToNextPlayer() {
+        this.getCurrentPlayer().setTurn(false);
+        this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length;
+        this.getCurrentPlayer().setTurn(true);
+    }
+
+
+
+    toObject() {
+        // convert the game object to a plain JavaScript object.
+        return {
+            players: this.players.map(player => player.toObject()),
+            currentPlayerIndex: this.currentPlayerIndex,
+            firstPlayerToStart: this.firstPlayerToStart,
+            pot: this.pot.map(card => card.toObject()),
+            trumpCard: this.trumpCard.toObject(),
+            board: this.cardsOnTable.map(card => card.toObject()),
+        };
     }
 
 

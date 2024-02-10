@@ -24,15 +24,11 @@ class Player {
     getName() {
         return this.name;
     }
-    getPoints() {
-        return this.points;
-    }
+ 
     setHand(hand) {
         this.hand = hand;
     }
-    setPoints(points) {
-        this.points = points;
-    }
+
     setName(name) {
         this.name = name;
     }
@@ -51,6 +47,17 @@ class Player {
 
     getAttack() {
         return this.attack;
+    }
+
+    toObject() {
+        // convert the player object to a plain JavaScript object
+        return {
+            name: this.name,
+            hand: this.hand.map(card => card.toObject()),
+            turn: this.turn,
+            attack: this.attack
+
+        }
     }
 }
 
