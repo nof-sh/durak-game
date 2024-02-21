@@ -152,10 +152,6 @@ class Game {
         }
     }
 
-    endTurn (players, pot, trumpCard) {
-
-    }
-
     getCurrentPlayer () {
         return this.players[this.currentPlayerIndex];
     }

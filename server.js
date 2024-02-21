@@ -1,8 +1,8 @@
 const express = require('express');
 const app = express();
 const admin = require('firebase-admin');
-const serviceAccount = require('serviceAccountKey.json');
-const Game = require('initGame.js');
+const serviceAccount = require('./serviceAccountKey.json');
+const Game = require('./initGame.js');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
@@ -71,15 +71,27 @@ app.post('/takeCardsFromTable', (req, res) => {
   }
 });
 
-app.post('/endTurn', (req, res) => {
+app.post('/endTurn', async (req, res) => {
   try {
-      //let players = /* get the players from the request */;
-      //let pot = /* get the pot from the request */;
-      //let trumpCard = /* get the trumpCard from the request */;
-      Game.endTurn(player);
-      res.status(200).send('Turn ended successfully');
+    let players = req.body.players;
+    let pot = req.body.pot;
+    let trumpCard = req.body.trumpCard;
+
+    // Update the variables of the current game
+    // ...
+
+    // Update the Firestore document with the updated game state
+    let roomId = req.body.roomId;
+    let roomRef = db.collection('gameRooms').doc(roomId);
+    await roomRef.update({
+      players: players,
+      pot: pot,
+      trumpCard: trumpCard
+    });
+
+    res.status(200).send('Turn ended successfully');
   } catch (error) {
-      res.status(400).send(error.message);
+    res.status(400).send(error.message);
   }
 });
 
@@ -122,21 +134,11 @@ app.post('/startGame', async (req, res) => {
   }
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+app.get('/', (req, res) => {
+  res.send('DURAK Multiplayer Game Server. The server is running and listening for requests.');
+});
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`Server running on port ${port}`));
+app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+});

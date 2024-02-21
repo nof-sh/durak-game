@@ -38,7 +38,7 @@ function sameSuit(hand) {
 function isLegalMove(playerCard, cardsOnTable, trumpCard, player) {
     // check if the move is legal
 
-    if (cardsOnTable.length === 0 || player.getAttack()) {
+    if (player.getAttack()) {
         return true; // no cards on the table, so any card is legal
     }
 
@@ -60,33 +60,6 @@ function isLegalMove(playerCard, cardsOnTable, trumpCard, player) {
         }
     }
 }
-
-function playTurn(player, cardsOnTable, trumpCard, pot) {
-    // implement the logic for a single turn of the game
-}
-
-function keepAttacking(player, playerCard, cardsOnTable) {
-    // implement the logic for continuing to attack.
-    // check if the player has any cards that can be used to attack.
-    // if they do, retturn the cards that can be used to attack.
-    // if they don't, return false.
-}
-  
-function attack(player, playerCard, cardsOnTable) {
-     // implement the logic for an attack
-}
-  
-function checkDefend(playerCard, cardsOnTable, trumpCard) {
-    // implement the logic for check defending an attack
-    // check if the player has any cards that can be used to defend.
-    // if they do, return the cards that can be used to defend.
-    // if they don't, return false.
-}
-
-function defend(player, playerCard, cardsOnTable, trumpCard, pot) {
-    // implement the logic for defending an attack
-}
-  
   
 function checkGameOver(players) {
     // check if the game is over
@@ -104,9 +77,5 @@ function checkGameOver(players) {
     firstPlayerToStart,
     sameSuit,
     isLegalMove,
-    playTurn,
-    attack,
-    defend,
-    endTurn,
     checkGameOver
  } 
