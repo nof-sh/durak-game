@@ -3,6 +3,11 @@ const app = express();
 const admin = require('firebase-admin');
 const serviceAccount = require('./serviceAccountKey.json');
 const Game = require('./initGame.js');
+const WebSocket = require('ws');
+const http = require('http');
+const server = http.createServer(app);
+
+app.use(express.json()); // for parsing application/json
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
@@ -51,8 +56,8 @@ app.post('/joinGameRoom', async (req, res) => {
 
 app.post('/playCard', (req, res) => {
   try {
-      //let player = /* get the player from the request */
-      //let card = /* get the card from the request */
+      let player = req.body.player;
+      let card = req.body.card;
       Game.playCard(player, card);
       res.status(200).send('Card played successfully');
   } catch (error) {
@@ -62,8 +67,8 @@ app.post('/playCard', (req, res) => {
 
 app.post('/takeCardsFromTable', (req, res) => {
   try {
-      //let player = /* get the player from the request */;
-      //let card = /* get the card from the request */;
+      let player =  req.body.player;
+      let card = req.body.card;
       Game.takeCardsFromTable(player);
       res.status(200).send('Cards from Table added successfully');
   } catch (error) {
@@ -135,10 +140,10 @@ app.post('/startGame', async (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.send('DURAK Multiplayer Game Server. The server is running and listening for requests.');
+  res.status(200).send('DURAK Multiplayer Game Server. The server is running and listening for requests.');
 });
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => {
+server.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
 });
