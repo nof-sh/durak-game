@@ -1,15 +1,39 @@
+import 'dart:convert';
+import 'dart:io' show Platform;
 // api.dart
 import 'package:http/http.dart' as http;
+import 'package:uuid/uuid.dart';
 
-var serverUrl = 'http://localhost:3000';
 
-Future<http.Response> createGameRoom() {
-  var url = Uri.parse('$serverUrl/createGameRoom');
-  return http.post(url);
+// Define the server URL
+final serverUrl = Platform.isAndroid? 'http://10.0.2.2:3000' : Platform.isIOS? 'http://127.0.0.1:3000' : 'http://localhost:3000';
+
+
+Future<http.Response> createGameRoom() async {
+  var uuid = const Uuid();
+  String playerId = uuid.v4(); // Generate a random player ID
+
+  final response = await http.post(
+    Uri.parse('$serverUrl/createGameRoom'),
+    headers: <String, String>{
+      'Content-Type': 'application/json; charset=UTF-8',
+    },
+    body: jsonEncode(<String, String>{
+      'playerId': playerId,
+    }),
+  );
+
+  if (response.statusCode == 200) {
+    // If the server returns a 200 OK response, parse the JSON.
+    return response;
+  } else {
+    // If the server returns an unsuccessful response code, throw an exception.
+    throw Exception('Failed to create game room');
+  }
 }
 
-Future<http.Response> test() {
-  var url = Uri.parse(serverUrl);
-  var messege = http.get(url);
+Future<http.Response> test() async {
+  var url = Uri.parse('$serverUrl/');
+  var messege = await http.get(url);
   return messege;
 }

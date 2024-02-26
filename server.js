@@ -4,8 +4,6 @@ const admin = require('firebase-admin');
 const serviceAccount = require('./serviceAccountKey.json');
 const Game = require('./initGame.js');
 const WebSocket = require('ws');
-const http = require('http');
-const server = http.createServer(app);
 
 app.use(express.json()); // for parsing application/json
 
@@ -22,7 +20,7 @@ app.post('/createGameRoom', async (req, res) => {
     };
   
     const docRef = await db.collection('gameRooms').add(room); // Add the room to the collection.
-    res.send({ roomId: docRef.id }); // send the room id to the client.
+    res.json({ roomId: docRef.id }); // send the room id to the client in JSON format.
 });
 
 app.post('/joinGameRoom', async (req, res) => {
@@ -143,7 +141,7 @@ app.get('/', (req, res) => {
   res.status(200).send('DURAK Multiplayer Game Server. The server is running and listening for requests.');
 });
 
-const port = process.env.PORT || 3000;
-server.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+const port = 3000;
+app.listen(port, '127.0.0.1', () => {
+    console.log(`Server running at http://127.0.0.1:${port}`);
 });
