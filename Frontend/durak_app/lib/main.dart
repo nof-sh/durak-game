@@ -1,11 +1,7 @@
 // ignore_for_file: avoid_print
-
-import 'dart:convert';
-
 import 'package:durak_app/room.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart';
 
 // Import api.dart
 import 'api.dart';
@@ -81,10 +77,9 @@ class MenuScreen extends StatelessWidget {
               child: const Text('Create Room'),
               onPressed: () async {
                 try {
-                  Response response = await createGameRoom();
-                  var roomNumber = jsonDecode(response.body);
+                  var roomNumber = await createGameRoom();
                   // ignore: use_build_context_synchronously
-                  showRoomDialog(context, roomNumber['roomId'], 1);
+                  showRoomDialog(context, roomNumber, 1);
                 } catch (e) {
                   print('Caught error: $e');
                 }

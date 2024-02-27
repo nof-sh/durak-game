@@ -7,21 +7,52 @@ const WebSocket = require('ws');
 
 app.use(express.json()); // for parsing application/json
 
+// Initialize Firebase Admin SDK
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
+// Initialize Firestore
 const db = admin.firestore();
 
+
 app.post('/createGameRoom', async (req, res) => {
+    // Generate a random 8-digit room number
+    const roomNumber = Math.floor(10000000 + Math.random() * 90000000);
+    // Create a new room document in Firestore with the generated room number
+    const docRef = db.collection('gameRooms').doc(roomNumber.toString());
+    // Add the player who created the room to the players array
     const room = {
       players: [req.body.playerId], // Add the player who created the room
       gameState: 'waiting' // Set the initial game state
     };
-  
-    const docRef = await db.collection('gameRooms').add(room); // Add the room to the collection.
-    res.json({ roomId: docRef.id }); // send the room id to the client in JSON format.
+    // Save the room document to Firestore and send the room number to the client
+    docRef.set(
+      room
+    )
+    .then(() => {
+      res.json({ roomId: docRef.id }); // send the room id to the client in JSON format.
+    })
+    .catch((error) => {
+      console.error('Error adding document: ', error); // log the error to the console.
+      res.status(500).send({ error: 'Error adding document \n' }); // send an error response to the client.
+    });
 });
+
+// delete a room from the database.
+app.delete('/deleteGameRooms/:roomId', async (req, res) => {
+  const roomId = req.params.roomId;
+
+  try {
+    await db.collection('gameRooms').doc(roomId).delete();
+    res.status(200).send(`Room ${roomId} deleted`);
+  } catch (error) {
+    console.error('Error deleting room: ', error);
+    res.status(500).send('Error deleting room');
+  }
+});
+
+// Your other routes and app.listen call here
 
 app.post('/joinGameRoom', async (req, res) => {
     const roomId = req.body.roomId; // the room id to join.
