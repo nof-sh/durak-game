@@ -43,6 +43,8 @@ app.post('/createGameRoom', async (req, res) => {
 app.delete('/deleteGameRooms/:roomId', async (req, res) => {
   const roomId = req.params.roomId;
 
+  console.log('Deleting room with ID: ', roomId); // Log the roomId
+
   try {
     await db.collection('gameRooms').doc(roomId).delete();
     res.status(200).send(`Room ${roomId} deleted`);
@@ -83,12 +85,37 @@ app.post('/joinGameRoom', async (req, res) => {
     }
 });
 
+app.post('/leaveGameRoom', async (req, res) => {
+    const roomId = req.body.roomId; // the room id to leave.
+    const playerId = req.body.playerId; // the player id to remove from the room.
+  
+    const roomRef = db.collection('gameRooms').doc(roomId); // point to the room document.
+    const roomSnapshot = await roomRef.get(); // the room document itself.
+    
+    if (!roomSnapshot.exists) { // if the room does not exist.
+      res.status(404).send({ error: 'Room not found \n ' });
+      console.log("The room does not exist. \n ");
+      return;
+    }
+    const roomData = roomSnapshot.data(); // the room data.
+    // remove the player from the room.
+    await roomRef.update({ 
+        players: admin.firestore.FieldValue.arrayRemove(playerId) // remove player from the players array.
+    });
+    res.send({ message: 'Successfully left room \n' });
+    console.log(`Player ${playerId} has left the room.\n`);
+});
+
 app.post('/playCard', (req, res) => {
   try {
       let player = req.body.player;
       let card = req.body.card;
-      Game.playCard(player, card);
-      res.status(200).send('Card played successfully');
+      let playCard = Game.playCard(player, card);
+      if (playCard === true){
+        res.status(200).send('Card played successfully');
+      }else{
+        res.status(400).send('it is not your turn or the move is not legal.');
+      }     
   } catch (error) {
       res.status(400).send(error.message);
   }

@@ -45,3 +45,37 @@ Future<void> deleteGameRoom(String roomId) async {
     throw Exception('Failed to delete game room');
   }
 }
+
+Future<String> joinGameRoom(String roomId) async {
+  final response = await http.post(
+    Uri.parse('$serverUrl/joinGameRoom'),
+    headers: <String, String>{
+      'Content-Type': 'application/json; charset=UTF-8',
+    },
+    body: jsonEncode(<String, String>{
+      'roomId': roomId,
+    }),
+  );
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body)['roomId'];
+  } else {
+    throw Exception('Failed to join game room - ${response.body}');
+  }
+}
+
+Future<void> leaveGameRoom(String roomId) async {
+  final response = await http.post(
+    Uri.parse('$serverUrl/leaveGameRoom'),
+    headers: <String, String>{
+      'Content-Type': 'application/json; charset=UTF-8',
+    },
+    body: jsonEncode(<String, String>{
+      'roomId': roomId,
+    }),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('Failed to leave game room');
+  }
+}

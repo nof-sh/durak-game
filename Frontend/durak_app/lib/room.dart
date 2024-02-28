@@ -1,4 +1,6 @@
 // This file contains the logic for the room dialog that is displayed when the user clicks on a room in the lobby.
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:durak_app/api.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -65,5 +67,74 @@ class RoomDialog extends StatelessWidget {
       ],
     );
   }
+}
+
+void showJoinRoomDialog(BuildContext context) {
+  final TextEditingController controller = TextEditingController();
+
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Join Room'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(hintText: "Enter Room Number"),
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('OK'),
+            onPressed: () async {
+              String roomId = controller.text;
+              try {
+                String roomNumber = await joinGameRoom(roomId);
+                joinedGameRoomDialog(context, roomNumber);
+              } catch (e) {
+                showDialog (
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: const Text('Error'),
+                      content: Text('Failed to join room - $e'),
+                      actions: <Widget>[
+                        TextButton(
+                          child: const Text('OK'),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                );   
+              }
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
+void joinedGameRoomDialog(BuildContext context, String roomNumber) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Joined Room'),
+        content: Text('You have joined room $roomNumber the game will start soon...please wait!'),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('I want to leave the room'),
+            onPressed: () {
+              // Implement exit room functionality
+              leaveGameRoom(roomNumber);
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      );
+    },
+  );
 }
 
