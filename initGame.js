@@ -1,15 +1,15 @@
 // gameLogic.js
 const dorakLogic = require('./dorakLogic');
-const Deck = require('./cards');
-const Player = require('./player');
+const { Deck } = require('./cards');
+const { Player } = require('./player');
 
 function initPlayers(players) {
-    // create a player object for each player
-    let playerObjects = [];
+    playersArray = [];
+    // create a player object for each player in the game
     for (let player of players) {
-        playerObjects.push(new Player(player));
+        playersArray.push(new Player(player));
     }
-    return playerObjects;
+    return playersArray;
 }
   
 function updateGameState (gameState, action){

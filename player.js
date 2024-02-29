@@ -1,5 +1,6 @@
 
 class Player {
+
     constructor(name) {
         this.name = name;
         this.hand = [];
@@ -61,4 +62,4 @@ class Player {
     }
 }
 
-module.exports = Player;
+module.exports = {Player}

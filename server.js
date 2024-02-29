@@ -1,9 +1,13 @@
 const express = require('express');
-const app = express();
 const admin = require('firebase-admin');
 const serviceAccount = require('./serviceAccountKey.json');
-const Game = require('./initGame.js');
-const WebSocket = require('ws');
+const { Game } = require('./initGame.js');
+const http = require('http');
+const { Server } = require('socket.io');
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
 
 app.use(express.json()); // for parsing application/json
 
@@ -16,85 +20,66 @@ admin.initializeApp({
 const db = admin.firestore();
 
 
-app.post('/createGameRoom', async (req, res) => {
+io.on('connection', (socket) => {
+  socket.on('createGameRoom', async (playerId) => {
     // Generate a random 8-digit room number
     const roomNumber = Math.floor(10000000 + Math.random() * 90000000);
     // Create a new room document in Firestore with the generated room number
     const docRef = db.collection('gameRooms').doc(roomNumber.toString());
     // Add the player who created the room to the players array
     const room = {
-      players: [req.body.playerId], // Add the player who created the room
+      players: [playerId], // Add the player who created the room
       gameState: 'waiting' // Set the initial game state
     };
     // Save the room document to Firestore and send the room number to the client
-    docRef.set(
-      room
-    )
-    .then(() => {
-      res.json({ roomId: docRef.id }); // send the room id to the client in JSON format.
-    })
-    .catch((error) => {
-      console.error('Error adding document: ', error); // log the error to the console.
-      res.status(500).send({ error: 'Error adding document \n' }); // send an error response to the client.
-    });
-});
+    docRef.set(room)
+      .then(() => {
+        socket.join(docRef.id); // Join the client to the room
+        socket.emit('createGameRoom', { message: 'Room created successfully', roomId: docRef.id }); // send a success response to the client.
+      })
+      .catch((error) => {
+        console.error('Error adding document: ', error); // log the error to the console.
+        socket.emit('error', { error: 'Error creating room' }); // send an error response to the client.
+      });
+  });
 
-// delete a room from the database.
-app.delete('/deleteGameRooms/:roomId', async (req, res) => {
-  const roomId = req.params.roomId;
-
-  console.log('Deleting room with ID: ', roomId); // Log the roomId
-
-  try {
-    await db.collection('gameRooms').doc(roomId).delete();
-    res.status(200).send(`Room ${roomId} deleted`);
-  } catch (error) {
-    console.error('Error deleting room: ', error);
-    res.status(500).send('Error deleting room');
-  }
-});
-
-// Your other routes and app.listen call here
-
-app.post('/joinGameRoom', async (req, res) => {
-    const roomId = req.body.roomId; // the room id to join.
-    const playerId = req.body.playerId; // the player id to add to the room.
-  
+    // Listen for 'joinGameRoom' event to join a player to a game room
+  socket.on('joinGameRoom', async (playerId, roomId) => {
     const roomRef = db.collection('gameRooms').doc(roomId); // point to the room document.
     const roomSnapshot = await roomRef.get(); // the room document itself.
-    
+      
     if (!roomSnapshot.exists) { // if the room does not exist.
-      res.status(404).send({ error: 'Room not found \n ' });
       console.log("The room does not exist. \n ");
+      socket.emit('error', { error: 'Room not found' });
       return;
     }
     const roomData = roomSnapshot.data(); // the room data.
     // check if the room is full.
-    if (roomData.players.lenght >= 4){
-        res.status(400).send({ error: 'Room is full \n'});
+    if (roomData.players.length >= 4){
         console.log("The room is full. Cannot add more players. \n")
+        socket.emit('error', { error: 'Room is full' });
         return;
     } else{
         // add the player to the room.
         await roomRef.update({ 
             players: admin.firestore.FieldValue.arrayUnion(playerId) // add player to the players array.
         });
-        res.send({ message: 'Successfully joined room \n' });
         console.log(`Player ${playerId} has joined the room.\n`);
-
+        socket.join(roomId); // Join the client to the room
+        socket.emit('joinedRoom', { message: 'Successfully joined room' });
+        // Notify all clients in the room that a new player has joined
+        io.to(roomId).emit('playerJoined', { playerId: playerId });
     }
-});
+  });
 
-app.post('/leaveGameRoom', async (req, res) => {
-    const roomId = req.body.roomId; // the room id to leave.
-    const playerId = req.body.playerId; // the player id to remove from the room.
-  
+  // Listen for 'leaveGameRoom' event to remove a player from a game room
+  socket.on('leaveGameRoom', async (roomId, playerId) => {
     const roomRef = db.collection('gameRooms').doc(roomId); // point to the room document.
     const roomSnapshot = await roomRef.get(); // the room document itself.
     
     if (!roomSnapshot.exists) { // if the room does not exist.
-      res.status(404).send({ error: 'Room not found \n ' });
       console.log("The room does not exist. \n ");
+      socket.emit('error', { error: 'Room not found' });
       return;
     }
     const roomData = roomSnapshot.data(); // the room data.
@@ -102,78 +87,82 @@ app.post('/leaveGameRoom', async (req, res) => {
     await roomRef.update({ 
         players: admin.firestore.FieldValue.arrayRemove(playerId) // remove player from the players array.
     });
-    res.send({ message: 'Successfully left room \n' });
     console.log(`Player ${playerId} has left the room.\n`);
-});
+    socket.leave(roomId); // Remove the client from the room
+    socket.emit('leftRoom', { message: 'Successfully left room' });
+    // Notify all clients in the room that a player has left
+    io.to(roomId).emit('playerLeft', { playerId: playerId });
+  });
 
-app.post('/playCard', (req, res) => {
-  try {
-      let player = req.body.player;
-      let card = req.body.card;
+  // Listen for 'deleteGameRoom' event to delete a game room
+  socket.on('deleteGameRoom', async (roomId) => {
+    console.log('Deleting room with ID: ', roomId); // Log the roomId
+
+    try {
+      await db.collection('gameRooms').doc(roomId).delete();
+      console.log(`Room ${roomId} deleted`);
+      socket.emit('roomDeleted', { message: `Room ${roomId} deleted` });
+      // Notify all clients in the room that the room has been deleted
+      io.to(roomId).emit('roomDeletedNotification', { message: `Room ${roomId} deleted` });
+    } catch (error) {
+      console.error('Error deleting room: ', error);
+      socket.emit('error', { error: 'Error deleting room' });
+    }
+  });
+
+  // Listen for 'playCard' event to play a card
+  socket.on('playCard', async (roomId, player, card) => {
+    try {
       let playCard = Game.playCard(player, card);
       if (playCard === true){
-        res.status(200).send('Card played successfully');
+        console.log('Card played successfully');
+        socket.emit('cardPlayed', { message: 'Card played successfully' });
+        // Notify all clients in the room that a card has been played
+        io.to(roomId).emit('cardPlayedNotification', { player: player, card: card });
       }else{
-        res.status(400).send('it is not your turn or the move is not legal.');
+        console.log('It is not your turn or the move is not legal.');
+        socket.emit('error', { error: 'It is not your turn or the move is not legal.' });
       }     
-  } catch (error) {
-      res.status(400).send(error.message);
-  }
-});
+    } catch (error) {
+      console.error('Error playing card: ', error);
+      socket.emit('error', { error: error.message });
+    }
+  });
 
-app.post('/takeCardsFromTable', (req, res) => {
-  try {
-      let player =  req.body.player;
-      let card = req.body.card;
+  // Listen for 'takeCardsFromTable' event to take cards from table
+  socket.on('takeCardsFromTable', async (roomId, player) => {
+    try {
       Game.takeCardsFromTable(player);
-      res.status(200).send('Cards from Table added successfully');
-  } catch (error) {
-      res.status(400).send(error.message);
-  }
-});
+      console.log('Cards from Table added successfully');
+      socket.emit('cardsTaken', { message: 'Cards from Table added successfully' });
+      // Notify all clients in the room that cards have been taken from the table
+      io.to(roomId).emit('cardsTakenNotification', { player: player });
+    } catch (error) {
+      console.error('Error taking cards from table: ', error);
+      socket.emit('error', { error: error.message });
+    }
+  });
 
-app.post('/endTurn', async (req, res) => {
-  try {
-    let players = req.body.players;
-    let pot = req.body.pot;
-    let trumpCard = req.body.trumpCard;
-
-    // Update the variables of the current game
-    // ...
-
-    // Update the Firestore document with the updated game state
-    let roomId = req.body.roomId;
+  // Listen for 'startGame' event to start a game
+  socket.on('startGame', async (roomId) => {
+    // Retrieve the room from Firestore
     let roomRef = db.collection('gameRooms').doc(roomId);
-    await roomRef.update({
-      players: players,
-      pot: pot,
-      trumpCard: trumpCard
-    });
+    let roomDoc = await roomRef.get();
 
-    res.status(200).send('Turn ended successfully');
-  } catch (error) {
-    res.status(400).send(error.message);
-  }
-});
-
-app.post('/startGame', async (req, res) => {
-  let roomId = req.body.roomId;
-
-  // Retrieve the room from Firestore
-  let roomRef = db.collection('gameRooms').doc(roomId);
-  let roomDoc = await roomRef.get();
-
-  if (!roomDoc.exists) {
-      res.status(400).send('Cannot start game: Room does not exist');
+    if (!roomDoc.exists) {
+      console.log('Cannot start game: Room does not exist');
+      socket.emit('error', { error: 'Cannot start game: Room does not exist' });
       return;
-  }
+    }
 
-  let roomData = roomDoc.data();
+    let roomData = roomDoc.data();
 
-  // Check if the room has players
-  if (roomData.players && roomData.players.length > 0) {
+    // Check if the room has players
+    if (roomData.players && roomData.players.length > 0) {
       // Initialize a new game with the players in the room
-      let game = new Game(roomData.players);
+      let players = Array.from(roomData.players);
+      let game = new Game(players);
+      game = game.startNewGame();
       // Convert the game object to a plain JavaScript object (for saving to Firestore).
       let gameObject = game.toObject();
 
@@ -186,20 +175,50 @@ app.post('/startGame', async (req, res) => {
       // Save the game state back to Firestore
       await roomRef.update(roomData);
 
-      // Notify all players in the room that the game has started
-      io.to(roomId).emit('gameStarted');
+      console.log('Game started successfully');
+      socket.emit('gameStarted', { message: 'Game started successfully' });
+      // Notify all clients in the room that the game has started
+      io.to(roomId).emit('gameStartedNotification', { message: 'Game started' });
+    } else {
+      console.log('Cannot start game: Room has no players');
+      socket.emit('error', { error: 'Cannot start game: Room has no players' });
+    }
+  });
 
-      res.status(200).send('Game started successfully');
-  } else {
-      res.status(400).send('Cannot start game: Room has no players');
-  }
+  // Listen for 'endTurn' event to end a turn
+  socket.on('endTurn', async (roomId, players, pot, trumpCard) => {
+    try {
+      // Update the variables of the current game
+      // ...
+
+      // Update the Firestore document with the updated game state
+      let roomRef = db.collection('gameRooms').doc(roomId);
+      await roomRef.update({
+        players: players,
+        pot: pot,
+        trumpCard: trumpCard
+      });
+
+      console.log('Turn ended successfully');
+      socket.emit('turnEnded', { message: 'Turn ended successfully' });
+      // Notify all clients in the room that the turn has ended
+      io.to(roomId).emit('turnEndedNotification', { message: 'Turn ended' });
+    } catch (error) {
+      console.error('Error ending turn: ', error);
+      socket.emit('error', { error: error.message });
+    }
+  });
+  
 });
+
+
+
 
 app.get('/', (req, res) => {
   res.status(200).send('DURAK Multiplayer Game Server. The server is running and listening for requests.');
 });
 
 const port = 3000;
-app.listen(port, '127.0.0.1', () => {
+server.listen(port, '127.0.0.1', () => {
     console.log(`Server running at http://127.0.0.1:${port}`);
 });
