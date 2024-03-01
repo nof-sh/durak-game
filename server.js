@@ -73,7 +73,7 @@ io.on('connection', (socket) => {
   });
 
   // Listen for 'leaveGameRoom' event to remove a player from a game room
-  socket.on('leaveGameRoom', async (roomId, playerId) => {
+  socket.on('leaveGameRoom', async (playerId, roomId) => {
     const roomRef = db.collection('gameRooms').doc(roomId); // point to the room document.
     const roomSnapshot = await roomRef.get(); // the room document itself.
     

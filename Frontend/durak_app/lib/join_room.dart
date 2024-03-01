@@ -2,8 +2,11 @@ import 'package:durak_app/game_room.dart';
 import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:logging/logging.dart';
+import 'package:durak_app/data_convert.dart';
 
 final Logger _log = Logger('JoinGameRoom');
+
+
 
 class JoinGameRoom extends StatelessWidget {
   final String playerName;
@@ -33,8 +36,8 @@ class JoinGameRoom extends StatelessWidget {
               child: const Text('Join'),
               onPressed: () {
                 // Emit 'joinGameRoom' event to the server
-                String roomId = _roomIdController.text;
-                socket.emit('joinGameRoom', (playerName, roomId));
+                JoinRoomData data = JoinRoomData(playerName, _roomIdController.text);
+                socket.emit('joinGameRoom', data.joinRoomToJson());
                 socket.on('joinedRoom', (data) {
                   // When the server responds, navigate to the game room
                   Navigator.push(
