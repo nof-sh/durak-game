@@ -44,7 +44,9 @@ io.on('connection', (socket) => {
   });
 
     // Listen for 'joinGameRoom' event to join a player to a game room
-  socket.on('joinGameRoom', async (playerId, roomId) => {
+  socket.on('joinGameRoom', async (data) => {
+    const playerId = data.playerId;
+    const roomId = data.roomId;
     const roomRef = db.collection('gameRooms').doc(roomId); // point to the room document.
     const roomSnapshot = await roomRef.get(); // the room document itself.
       

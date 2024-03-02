@@ -1,13 +1,13 @@
 class JoinRoomData {
-  final String id;
-  final String number;
+  final String playerId;
+  final String roomId;
 
-  JoinRoomData(this.id, this.number);
+  JoinRoomData(this.playerId, this.roomId);
 
   Map<String, dynamic> joinRoomToJson() {
     return {
-      'id': id,
-      'number': number,
+      'playerId': playerId,
+      'roomId': roomId,
     };
   }
 }
