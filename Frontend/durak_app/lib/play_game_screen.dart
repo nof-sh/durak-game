@@ -103,21 +103,21 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
                     Positioned(
                       top: 0,
                       child: Row(
-                        children: otherPlayersCards[0].map((card) => Image.network(card)).toList(),
+                        children: otherPlayersCards[0].map((card) => Image.network(card['backCardImageUrl'])).toList(),
                       ),
                     ),
                     if (otherPlayersCards.length > 1)
                       Positioned(
                         left: 0,
                         child: Column(
-                          children: otherPlayersCards[1].map((card) => Image.network(card)).toList(),
+                          children: otherPlayersCards[1].map((card) => Image.network(card['backCardImageUrl'])).toList(),
                         ),
                       ),
                     if (otherPlayersCards.length > 2)
                       Positioned(
                         right: 0,
                         child: Column(
-                          children: otherPlayersCards[2].map((card) => Image.network(card)).toList(),
+                          children: otherPlayersCards[2].map((card) => Image.network(card['backCardImageUrl'])).toList(),
                         ),
                       ),
                   ],
