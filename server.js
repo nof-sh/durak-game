@@ -68,9 +68,9 @@ io.on('connection', (socket) => {
         });
         console.log(`Player ${playerId} has joined the room.\n`);
         socket.join(roomId); // Join the client to the room
-        socket.emit('joinedRoom', { message: 'Successfully joined room' });
+        socket.emit('joinedRoom', { numberOfPlayers: roomData.players.length });
         // Notify all clients in the room that a new player has joined
-        io.to(roomId).emit('playerJoined', { playerId: playerId });
+        io.to(roomId).emit('playerJoined', { playerId: playerId, numberOfPlayers: roomData.players.length});
     }
   });
 

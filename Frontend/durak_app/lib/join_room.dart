@@ -1,3 +1,4 @@
+import 'package:durak_app/errors_screen.dart';
 import 'package:durak_app/game_room.dart';
 import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
@@ -42,13 +43,18 @@ class JoinGameRoom extends StatelessWidget {
                   // When the server responds, navigate to the game room
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => GameRoom(playerName, _roomIdController.text, socket)),
+                    MaterialPageRoute(builder: (context) => JoinedGameRoomScreen(_roomIdController.text, data['numberOfPlayers'], socket)),
                   );
                 });
                 socket.on('error', (data) {
                   if (data is Map && data.containsKey('error')) {
                     // Handle error
                     _log.info('Error: ${data['error']}');
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                      builder: (context) => ErrorScreen(data['error']),
+                      ),
+                    );
                   }
                 });
               },

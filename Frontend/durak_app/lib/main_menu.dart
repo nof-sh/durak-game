@@ -1,3 +1,4 @@
+import 'package:durak_app/errors_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:durak_app/game_room.dart';
 import 'package:durak_app/join_room.dart';
@@ -34,7 +35,11 @@ class MainMenu extends StatelessWidget {
                 socket.on('error', (data) {
                   if (data is Map && data.containsKey('error')) {
                     // Handle error
-                    print('Error: ${data['error']}');
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                      builder: (context) => ErrorScreen(data['error']),
+                      ),
+                    );
                   }
                 });
               },

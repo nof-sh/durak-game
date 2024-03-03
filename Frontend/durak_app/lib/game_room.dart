@@ -21,7 +21,7 @@ class GameRoom extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text('Game Room # $roomId # created by $playerName'),
+            Text('Game Room # $roomId # created successfully'),
             ElevatedButton(
               child: const Text('Start Game'),
               onPressed: () {
@@ -43,6 +43,90 @@ class GameRoom extends StatelessWidget {
                   Navigator.pop(context);
                 });
               },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+
+class JoinedGameRoomScreen extends StatefulWidget {
+  final String roomId;
+  final int numberOfUsersInRoom;
+  final io.Socket socket;
+
+  const JoinedGameRoomScreen(this.roomId, this.numberOfUsersInRoom, this.socket, {super.key});
+  
+  @override
+  State<JoinedGameRoomScreen> createState() => _JoinedGameRoomScreenState();
+}
+
+class _JoinedGameRoomScreenState extends State<JoinedGameRoomScreen> {
+  int numberOfUsers = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    numberOfUsers = widget.numberOfUsersInRoom + 1;
+    widget.socket.on('joinedRoom', (data) {
+      setState(() {
+        numberOfUsers = data['numberOfPlayers'];
+      });
+    });
+    widget.socket.on('playerJoined', (data) {
+      setState(() {
+        numberOfUsers = data['numberOfPlayers'];
+      });
+    });
+    widget.socket.on('startGame', (data) {
+      // Navigate to the game screen
+    });
+    widget.socket.on('roomDeletedNotification', (data) {
+      // Navigate to the main menu
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Game Room Deleted'),
+            content: const Text('The game room has been deleted.'),
+            actions: [
+              ElevatedButton(
+                child: const Text('OK'),
+                onPressed: () {
+                  Navigator.pop(context);
+                },      
+              ),
+            ],
+          );
+        },
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Game Room ${widget.roomId}'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(
+              'You joined game room ${widget.roomId}',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            Text(
+              'In The Room $numberOfUsers users including you.',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            Text(
+              'The game will start soon. Please wait...',
+              style: Theme.of(context).textTheme.titleMedium,
             ),
           ],
         ),
