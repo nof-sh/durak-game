@@ -38,6 +38,8 @@ class LoginScreen extends StatelessWidget {
                 io.Socket socket = io.io(serverUrl, <String, dynamic>{
                   'transports': ['websocket'],
                 });
+                // Emit a 'playerName' event with the player's name
+                socket.emit('playerName', _nameController.text);
                 socket.onConnect((_) {
                   _log.info('Connected');
                   // When the connection is successful, navigate to the main menu

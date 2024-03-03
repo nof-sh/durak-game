@@ -21,6 +21,9 @@ const db = admin.firestore();
 
 
 io.on('connection', (socket) => {
+  socket.on('playerName', (playerName) => {
+    socket.playerName = playerName;
+  });
   socket.on('createGameRoom', async (playerId) => {
     // Generate a random 8-digit room number
     const roomNumber = Math.floor(10000000 + Math.random() * 90000000);
@@ -178,9 +181,9 @@ io.on('connection', (socket) => {
       await roomRef.update(roomData);
 
       console.log('Game started successfully');
-      socket.emit('gameStarted', { message: 'Game started successfully' });
+      socket.emit('gameStartedNotification', { message: 'Game started successfully'});
       // Notify all clients in the room that the game has started
-      io.to(roomId).emit('gameStartedNotification', { message: 'Game started' });
+      io.to(roomId).emit('gameStarted', { data: gameObject, trumpCard: gameObject.trumpCard, players: gameObject.players, pot: gameObject.pot, playerName: socket.playerName, playerCards: gameObject.players[socket.playerName].hand});
     } else {
       console.log('Cannot start game: Room has no players');
       socket.emit('error', { error: 'Cannot start game: Room has no players' });
