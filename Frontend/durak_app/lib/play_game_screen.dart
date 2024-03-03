@@ -55,6 +55,10 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
     widget.socket.emit('playCard', { 'roomId': widget.roomId, 'player': playerObject ,'card': card });
   }
 
+  void takeCardFromTable(var card) {
+    widget.socket.emit('takeCardFromTable', { 'roomId': widget.roomId, 'player': playerObject, 'card': card });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +77,14 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
                     Positioned(
                       left: constraints.maxWidth / 2 - 50,
                       top: constraints.maxHeight / 2 - 50,
-                      child: Image.network('url_of_table_image'),
+                      child: Row(
+                        children: tableCards.entries.map((MapEntry<dynamic, dynamic> card) => InkWell(
+                          onTap: () => takeCardFromTable(card),
+                          child: Card(
+                            child: Image.network(card.value['frontCardImageUrl']),
+                          ),
+                        )).toList(),
+                      ),
                     ),
                     // Player's cards at the bottom
                     Positioned(
