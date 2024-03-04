@@ -1,9 +1,8 @@
 class Card {
-    constructor(rank, suit, frontImageUrl, boolBackCardImage) {
+    constructor(rank, suit, frontImageUrl) {
       this.rank = rank;
       this.suit = suit;
       this.frontCardImageUrl = frontImageUrl;
-      this.boolBackCardImage = boolBackCardImage;
       this.backCardImageUrl = 'images/backCard.png';
 
     }
@@ -46,13 +45,13 @@ class Deck {
       for (let suit of this.suits) {
         for (let rank of this.ranks) {
           let frontCardImageUrl = `images/${suit}/${rank}.png`; // images saved in this format
-          this.cards.push(new Card(rank, suit, frontCardImageUrl, boolBackCardImage));
+          this.cards.push(new Card(rank, suit, frontCardImageUrl));
         }
       }
     }
 
     getCards() {
-        return this.cards;
+      return this.cards;
     }
 }
 

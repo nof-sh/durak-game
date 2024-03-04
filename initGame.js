@@ -1,25 +1,63 @@
-// gameLogic.js
-const dorakLogic = require('./dorakLogic');
+
 const { Deck } = require('./cards');
 const { Player } = require('./player');
 
-function initPlayers(players) {
-    playersArray = [];
-    // create a player object for each player in the game
-    for (let player of players) {
-        playersArray.push(new Player(player));
+
+function isLegalMove( playerCard, cardsOnTable, trumpCard, player) {
+    // check if the move is legal
+
+    if (player.getAttack()) {
+        return true; // no cards on the table, so any card is legal
     }
-    return playersArray;
-}
-  
-function updateGameState (gameState, action){
 
+    const tableSuit = cardsOnTable[cardsOnTable.length - 1].getSuit();
+    const tableRank = cardsOnTable[cardsOnTable.length - 1].getRank();
+    const playerSuit = playerCard.getSuit();
+    const playerRank = playerCard.getRank();
+
+    // if the player is a defender, the move is legal if the player has a card of the same suit with a higher rank or trump card .
+    if(!player.getAttack()){
+        if (tableSuit === playerSuit) {
+            return playerRank > tableRank; // can only play a card of the same suit with a higher rank
+        // else if the player has a trump card, the move is legal.
+        } else if (playerSuit === trumpCard.getSuit()) { 
+            return true; // can play any trump card
+        // else the player doesn't have a card of the same suit of card on table or a trump card, the move is illegal.
+        } else {
+            return false; 
+        }
+    }
 }
 
+function checkGameOver(players) {
+    // check if the game is over
+    for (let player of players) {
+        // if a player has no cards left, the game is over
+        if (player.getHand().length === 0) {
+            console.log(`${player.getPlayerName()} has no cards left. \n ${player.getPlayerName()} won the game\n!`);
+            return (true, player.getPlayerName()); // return the name of the player who won.
+        }
+    }
+        return false;
+}
+
+
+function sameSuit(hand) {
+    // check if all the cards in the hand have the same suit
+    const suitToCheck = hand[0].getSuit();
+
+    for (let card of hand) {
+        if (card.getSuit() != suitToCheck) {
+            return false; // found a card of a different suit
+        }
+    }
+
+    return true; // all cards have the same suit
+}
 class Game {
 
     constructor(players) {
-      this.players = initPlayers(players);
+      this.players = this.initPlayers(players);
       this.deck = new Deck();
       this.pot = [];
       this.trumpCard = null;
@@ -29,40 +67,75 @@ class Game {
       // other game state variables...
     }
 
+    initPlayers(players) {
+        let playersObjects = [];
+        // create a player object for each player in the game
+        for (let player of players) {
+            playersObjects.push(new Player(player));
+        }
+        return playersObjects;
+    }
+
     setTrumpCard() {
         // draw the first card from the pot and set it as the trump card.
-        randomIndex = Math.floor(Math.random() * this.pot.length);
+        let randomIndex = Math.floor(Math.random() * this.pot.length);
         return this.pot.splice(randomIndex, 1)[0];
     }
 
     dealCards(numCards) {
         let dealtCards = [];
         for(let i = 0; i < numCards; i++) {
-            let randomIndex = Math.floor(Math.random() * this.deck.length);
-            let card = this.deck.splice(randomIndex, 1)[0];
+            let randomIndex = Math.floor(Math.random() * this.deck.getCards().length);
+            let card = this.deck.getCards().splice(randomIndex, 1)[0];
             dealtCards.push(card);
         }
         return dealtCards;
     }
 
+    firstPlayerToStart() {
+        // determine the first player
+        let firstPlayer = this.players[0];
+        let lowestTrump = this.trumpCard;
+    
+        for (let player of this.players) {
+            let playerLowestTrump = player.getHand()
+                .filter(card => card.getSuit() == this.trumpCard.getSuit())
+                .sort((a,b) => a.getRank() - b.getRank())[0];
+            
+            if (playerLowestTrump && playerLowestTrump.getRank() < lowestTrump) {
+                firstPlayer = player;
+                lowestTrump = playerLowestTrump.getRank();
+            }
+        }
+    
+        firstPlayer.setTurn(true);
+        firstPlayer.setAttack(true);
+    
+        return this.players.indexOf(firstPlayer);
+    }
+
     startNewGame () {
-        this.deck.generateDeck(); // Create a deck of cards
+        this.deck.generateDeck();
+         // Create a deck of cards
+        let copyDack = this.deck // copy the deck
         // other setup logic...
 
         // Distribute six cards to each player
         for (let player of this.players) {
-            player.setHand(dealCards(this.deck.getCards(), 6));
-            if (dorakLogic.sameSuit(player.getHand())) {
+            var hand = this.dealCards(6);
+            player.setHand(hand);
+            if (sameSuit(player.getHand())) {
                 // If a player has all cards of the same suit, reshuffle and redistribute the cards
-                return startNewGame();
+                this.deck = copyDack;
+                return this.startNewGame();
             }
         }// Draw the first card from the pot and set it as the trump card
-        this.trumpCard = setTrumpCard(); 
+        this.trumpCard = this.setTrumpCard(); 
         // Create the pot with the remaining cards
-        this.pot = this.deck.getCards();
+        this.pot = this.deck;
         
         // Determine the first player 
-        this.firstPlayerToStart = dorakLogic.determineFirstPlayer(this.players, this.trumpCard);
+        this.firstPlayerToStart = this.firstPlayerToStart();
         this.currentPlayerIndex = this.firstPlayerToStart;
 
     } 
@@ -86,10 +159,6 @@ class Game {
         }
     }
 
-    playGame () {
-        // implement the logic for playing the game
-    }
-
     swapTurns () {
         // implement the logic for swapping turns
         
@@ -100,7 +169,7 @@ class Game {
         this.players[this.currentPlayerIndex].setAttack(true);
         // check that all the players have 6 cards in their hands - unless the pot is empty and the trump card is null.
         for (let player of this.players) {
-            takeCardsFromPot(player);
+            this.takeCardsFromPot(player);
         }
             
     }
@@ -113,7 +182,7 @@ class Game {
         if (this.getCurrentPlayer() !== player) {
             throw new Error('It is not your turn');
         // else if - the move is not legal, throw an error.
-        } else if (!dorakLogic.isLegalMove(card, this.cardsOnTable, this.trumpCard, this.getCurrentPlayer())) {
+        } else if (!isLegalMove(card, this.cardsOnTable, this.trumpCard, this.getCurrentPlayer())) {
             throw new Error('Illegal move');
         // else - the player plays the card and the turn is over.
         } else {
@@ -129,6 +198,7 @@ class Game {
             }else{
                 this.getCurrentPlayer().setAttack(true);
             }
+            checkGameOver(this.players);
         }
     }
 
@@ -208,4 +278,4 @@ class Game {
 
 module.exports = {
     Game
-  };
+}

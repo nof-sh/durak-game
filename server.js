@@ -224,6 +224,10 @@ app.get('/', (req, res) => {
 });
 
 const port = 3000;
-server.listen(port, '127.0.0.1', () => {
+if (process.env.NODE_ENV !== 'test') {
+  server.listen(port, '127.0.0.1', () => {
     console.log(`Server running at http://127.0.0.1:${port}`);
-});
+  });
+}
+
+module.exports = app;
