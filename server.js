@@ -166,8 +166,8 @@ io.on('connection', (socket) => {
     if (roomData.players && roomData.players.length > 0) {
       // Initialize a new game with the players in the room
       let players = Array.from(roomData.players);
-      let game = new Game(players);
-      game = game.startNewGame();
+      let game = new Game();
+      game = game.startNewGame(players);
       // Convert the game object to a plain JavaScript object (for saving to Firestore).
       let gameObject = game.toObject();
 

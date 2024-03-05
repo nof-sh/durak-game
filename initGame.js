@@ -1,79 +1,81 @@
 
+const e = require('express');
 const { Deck } = require('./cards');
 const { Player } = require('./player');
 
 
-function isLegalMove( playerCard, cardsOnTable, trumpCard, player) {
-    // check if the move is legal
 
-    if (player.getAttack()) {
-        return true; // no cards on the table, so any card is legal
-    }
-
-    const tableSuit = cardsOnTable[cardsOnTable.length - 1].getSuit();
-    const tableRank = cardsOnTable[cardsOnTable.length - 1].getRank();
-    const playerSuit = playerCard.getSuit();
-    const playerRank = playerCard.getRank();
-
-    // if the player is a defender, the move is legal if the player has a card of the same suit with a higher rank or trump card .
-    if(!player.getAttack()){
-        if (tableSuit === playerSuit) {
-            return playerRank > tableRank; // can only play a card of the same suit with a higher rank
-        // else if the player has a trump card, the move is legal.
-        } else if (playerSuit === trumpCard.getSuit()) { 
-            return true; // can play any trump card
-        // else the player doesn't have a card of the same suit of card on table or a trump card, the move is illegal.
-        } else {
-            return false; 
-        }
-    }
-}
-
-function checkGameOver(players) {
-    // check if the game is over
-    for (let player of players) {
-        // if a player has no cards left, the game is over
-        if (player.getHand().length === 0) {
-            console.log(`${player.getPlayerName()} has no cards left. \n ${player.getPlayerName()} won the game\n!`);
-            return (true, player.getPlayerName()); // return the name of the player who won.
-        }
-    }
-        return false;
-}
-
-
-function sameSuit(hand) {
-    // check if all the cards in the hand have the same suit
-    const suitToCheck = hand[0].getSuit();
-
-    for (let card of hand) {
-        if (card.getSuit() != suitToCheck) {
-            return false; // found a card of a different suit
-        }
-    }
-
-    return true; // all cards have the same suit
-}
 class Game {
 
-    constructor(players) {
-      this.players = this.initPlayers(players);
+    constructor() {
+      this.players = [];
       this.deck = new Deck();
       this.pot = [];
       this.trumpCard = null;
-      this.currentPlayerIndex = null;
-      this.firstPlayerToStart = null;
+      this.currentPlayerIndex = 0;
+      this.firstPlayer = null;
       this.cardsOnTable = [];
       // other game state variables...
     }
+    isLegalMove( playerCard, cardsOnTable, trumpCard, player) {
+        // check if the move is legal
+    
+        if (player.getAttack() && cardsOnTable.length == 0) {
+            return true; // no cards on the table, so any card is legal
+        }
+    
+        if (cardsOnTable.length > 0) {
+            var tableSuit = cardsOnTable[cardsOnTable.length - 1].getSuit();
+            var tableRank = cardsOnTable[cardsOnTable.length - 1].getRank();
+            var playerSuit = playerCard.getSuit();
+            var playerRank = playerCard.getRank();
+        }
+    
+        // if the player is a defender, the move is legal if the player has a card of the same suit with a higher rank or trump card .
+        if(!player.getAttack()){
+            if (tableSuit === playerSuit) {
+                return playerRank > tableRank; // can only play a card of the same suit with a higher rank
+            // else if the player has a trump card, the move is legal.
+            } else if (playerSuit === trumpCard.getSuit()) { 
+                return true; // can play any trump card
+            // else the player doesn't have a card of the same suit of card on table or a trump card, the move is illegal.
+            } else {
+                return false; 
+            }
+        }
+    }
+    
+    checkGameOver(players) {
+        // check if the game is over
+        for (let player of players) {
+            // if a player has no cards left, the game is over
+            if (player.getHand().length === 0) {
+                console.log(`${player.getPlayerName()} has no cards left. \n ${player.getPlayerName()} won the game\n!`);
+                return (true, player.getPlayerName()); // return the name of the player who won.
+            }
+        }
+            return false;
+    }
+    
+    
+    sameSuit(playerIndex) {
+        // check if all the cards in the hand have the same suit
+        const suitToCheck = this.players[playerIndex].getHand()[0].getSuit();
+        for (let card of this.players[playerIndex].getHand()) {
+            if (card.getSuit() !== suitToCheck) {
+                return false;
+            }else{
+                return true;
+            }
+        }
+    }
 
     initPlayers(players) {
-        let playersObjects = [];
-        // create a player object for each player in the game
-        for (let player of players) {
-            playersObjects.push(new Player(player));
-        }
-        return playersObjects;
+        // create a new player object for each player
+       for (let player of players) {
+           this.players.push(new Player(player));
+       }
+
     }
 
     setTrumpCard() {
@@ -86,7 +88,7 @@ class Game {
         let dealtCards = [];
         for(let i = 0; i < numCards; i++) {
             let randomIndex = Math.floor(Math.random() * this.deck.getCards().length);
-            let card = this.deck.getCards().splice(randomIndex, 1)[0];
+            let card = this.deck.popCard(randomIndex);
             dealtCards.push(card);
         }
         return dealtCards;
@@ -114,7 +116,8 @@ class Game {
         return this.players.indexOf(firstPlayer);
     }
 
-    startNewGame () {
+    startNewGame (players) {
+        this.initPlayers(players);
         this.deck.generateDeck();
          // Create a deck of cards
         let copyDack = this.deck // copy the deck
@@ -135,8 +138,8 @@ class Game {
         this.pot = this.deck;
         
         // Determine the first player 
-        this.firstPlayerToStart = this.firstPlayerToStart();
-        this.currentPlayerIndex = this.firstPlayerToStart;
+        this.firstPlayer = this.firstPlayerToStart();
+        this.currentPlayerIndex = this.firstPlayer;
 
     } 
 
@@ -192,7 +195,7 @@ class Game {
                 this.getCurrentPlayer().setAttack(false);
                 this.moveToNextPlayer();
             // else if - If the round is over (we go back to the player who started the round). Start a new round with a new starting player
-            }else if (this.getCurrentPlayer().getAttack() === false && this.getCurrentPlayer() === this.players[this.firstPlayerToStart]){
+            }else if (this.getCurrentPlayer().getAttack() === false && this.getCurrentPlayer() === this.players[this.firstPlayer]){
                 this.swapTurns();
             // else - the player can keep play and now he naad to attack.
             }else{
@@ -249,10 +252,6 @@ class Game {
         return this.players;
     }
 
-    getCurrentPlayer() {
-        return this.players[this.currentPlayerIndex];
-    }
-
     moveToNextPlayer() {
         this.getCurrentPlayer().setTurn(false);
         this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length;
@@ -266,7 +265,7 @@ class Game {
         return {
             players: this.players.map(player => player.toObject()),
             currentPlayerIndex: this.currentPlayerIndex,
-            firstPlayerToStart: this.firstPlayerToStart,
+            firstPlayerToStart: this.firstPlayer,
             pot: this.pot.map(card => card.toObject()),
             trumpCard: this.trumpCard.toObject(),
             board: this.cardsOnTable.map(card => card.toObject()),

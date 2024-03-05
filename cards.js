@@ -53,6 +53,11 @@ class Deck {
     getCards() {
       return this.cards;
     }
+
+    popCard(i) {
+      // remove the i card from the deck and return it
+      return this.cards[i].pop();
+    }
 }
 
 module.exports = {

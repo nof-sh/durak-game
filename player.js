@@ -6,7 +6,6 @@ class Player {
         this.hand = [];
         this.turn = false;
         this.attack = false;
-        this.points = 0;
     }
     playCard(card) {
         // remove the played card from the player's hand
