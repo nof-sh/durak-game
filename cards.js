@@ -56,7 +56,14 @@ class Deck {
 
     popCard(i) {
       // remove the i card from the deck and return it
-      return this.cards[i].pop();
+      return this.cards.splice(i, 1)[0];
+    }
+
+    toObject() {
+      // convert the deck object to a plain JavaScript object
+      return {
+        cards: this.cards.map(card => card.toObject())
+      }
     }
 }
 

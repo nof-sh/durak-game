@@ -58,16 +58,16 @@ class Game {
     }
     
     
-    sameSuit(playerIndex) {
+    sameSuit(playerHand) {
         // check if all the cards in the hand have the same suit
-        const suitToCheck = this.players[playerIndex].getHand()[0].getSuit();
-        for (let card of this.players[playerIndex].getHand()) {
-            if (card.getSuit() !== suitToCheck) {
+        let suit = playerHand[0].getSuit();
+        for (let card of playerHand) {
+            if (card.getSuit() !== suit) {
                 return false;
-            }else{
-                return true;
             }
         }
+        return true;
+      
     }
 
     initPlayers(players) {
@@ -80,8 +80,8 @@ class Game {
 
     setTrumpCard() {
         // draw the first card from the pot and set it as the trump card.
-        let randomIndex = Math.floor(Math.random() * this.pot.length);
-        return this.pot.splice(randomIndex, 1)[0];
+        let randomIndex = Math.floor(Math.random() * this.deck.length);
+        return this.deck.popCard(randomIndex);
     }
 
     dealCards(numCards) {
@@ -127,7 +127,7 @@ class Game {
         for (let player of this.players) {
             var hand = this.dealCards(6);
             player.setHand(hand);
-            if (sameSuit(player.getHand())) {
+            if (this.sameSuit(player.getHand())) {
                 // If a player has all cards of the same suit, reshuffle and redistribute the cards
                 this.deck = copyDack;
                 return this.startNewGame();
@@ -266,7 +266,7 @@ class Game {
             players: this.players.map(player => player.toObject()),
             currentPlayerIndex: this.currentPlayerIndex,
             firstPlayerToStart: this.firstPlayer,
-            pot: this.pot.map(card => card.toObject()),
+            pot: this.pot.toObject(),
             trumpCard: this.trumpCard.toObject(),
             board: this.cardsOnTable.map(card => card.toObject()),
         };

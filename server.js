@@ -167,23 +167,28 @@ io.on('connection', (socket) => {
       // Initialize a new game with the players in the room
       let players = Array.from(roomData.players);
       let game = new Game();
-      game = game.startNewGame(players);
+      game.startNewGame(players);
       // Convert the game object to a plain JavaScript object (for saving to Firestore).
-      let gameObject = game.toObject();
+      if (game) {
+        let gameObject = game.toObject();
+        // Store the game instance in roomData
+        roomData.game = gameObject;
 
-      // Store the game instance in roomData
-      roomData.game = gameObject;
+        // Set the game state to "started"
+        roomData.gameState = 'started';
 
-      // Set the game state to "started"
-      roomData.gameState = 'started';
+        // Save the game state back to Firestore
+        await roomRef.update(roomData);
 
-      // Save the game state back to Firestore
-      await roomRef.update(roomData);
+        console.log('Game started successfully');
+        socket.emit('gameStartedNotification', { message: 'Game started successfully', data: gameObject, players: gameObject.players, trumpCard: gameObject.trumpCard, pot: gameObject.pot});
+        // Notify all clients in the room that the game has started
+        let playerIndex = gameObject.players.findIndex(player => player.name == socket.playerName);
+        io.to(roomId).emit('gameStarted', { data: gameObject, playerName: socket.playerName, playerCards: gameObject.players[playerIndex].hand});
+      } else {
+        console.error('Game is undefined');
+      }
 
-      console.log('Game started successfully');
-      socket.emit('gameStartedNotification', { message: 'Game started successfully'});
-      // Notify all clients in the room that the game has started
-      io.to(roomId).emit('gameStarted', { data: gameObject, trumpCard: gameObject.trumpCard, players: gameObject.players, pot: gameObject.pot, playerName: socket.playerName, playerCards: gameObject.players[socket.playerName].hand});
     } else {
       console.log('Cannot start game: Room has no players');
       socket.emit('error', { error: 'Cannot start game: Room has no players' });
