@@ -38,6 +38,7 @@ io.on('connection', (socket) => {
     docRef.set(room)
       .then(() => {
         socket.join(docRef.id); // Join the client to the room
+        console.log('Room created by: ', playerId, '  with ID: ', docRef.id); // Log the room creation
         socket.emit('createGameRoom', { message: 'Room created successfully', roomId: docRef.id }); // send a success response to the client.
       })
       .catch((error) => {
@@ -181,10 +182,9 @@ io.on('connection', (socket) => {
         await roomRef.update(roomData);
 
         console.log('Game started successfully');
-        socket.emit('gameStartedNotification', { message: 'Game started successfully', data: gameObject, players: gameObject.players, trumpCard: gameObject.trumpCard, pot: gameObject.pot});
-        // Notify all clients in the room that the game has started
-        let playerIndex = gameObject.players.findIndex(player => player.name == socket.playerName);
-        io.to(roomId).emit('gameStarted', { data: gameObject, playerName: socket.playerName, playerCards: gameObject.players[playerIndex].hand});
+        io.to(roomId).emit('gameStartedNotification', { message: 'Game started successfully', data: gameObject});
+        console.log('notify all clients in the room that the game has started');
+
       } else {
         console.error('Game is undefined');
       }

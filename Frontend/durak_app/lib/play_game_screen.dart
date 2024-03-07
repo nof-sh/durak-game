@@ -1,48 +1,51 @@
 import 'package:durak_app/errors_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
+import 'package:durak_app/data_convert.dart';
+
 
 class PlayGameScreen extends StatefulWidget {
+  final GameData gameObject;
+  final List <Map<String, dynamic>> players;
+  final Map<String, dynamic> trumpCard;
+  final List <Map<String, dynamic>> pot;
+  final int? firstPlayer;
   final String roomId;
   final io.Socket socket;
+  final String playerName;
 
-  const PlayGameScreen(this.roomId, this.socket, {super.key});
+  const PlayGameScreen(this.gameObject, this.players, this.trumpCard, this.pot, this.firstPlayer, this.roomId, this.socket, this.playerName, {super.key});
 
   @override
   State<PlayGameScreen> createState() => _PlayGameScreenState();
 }
 
 class _PlayGameScreenState extends State<PlayGameScreen> {
-  var playerObject = {};
-  String myName = '';
-  var myCards = {};
-  var tableCards = {};
-  String trumpCard = '';
-  var pot = {};
-  var gameObject = {};
-  var otherPlayersCards = [];
-  
-  get cardImages => null;
+  List <Map<String, dynamic>> playerObject = [];
+  List <Map<String, dynamic>> myCards = [];
+  Map<String, dynamic> trumpCard = {};
+  List <Map<String, dynamic>> pot = [];
+  GameData gameObject = GameData(players: [], currentPlayerIndex: 0, pot: [], trumpCard: {}, board: []);
+  List <Map<String, dynamic>> otherPlayersCards = [];
+  List <Map<String, dynamic>> tableCards = [];
+
 
 
   @override
   void initState() {
     super.initState();
-    widget.socket.on('gameStarted', (data) {
-      setState(() {
-        playerObject = data['players'][myName];
-        myCards = data['playerCards'];
-        trumpCard = data['trumpCard'];
-        pot = data['pot'];
-        gameObject = data['gameObject'];
-        otherPlayersCards = data['players'];
-        otherPlayersCards.removeWhere((player) => player['name'] == myName);
+    setState(() {
+      gameObject = widget.gameObject;
+      playerObject = widget.players.where((player) => player['name'] == widget.playerName).toList();
+      myCards = List<Map<String, dynamic>>.from(playerObject[0]['cards']);
+      trumpCard = widget.trumpCard;
+      pot = widget.pot;
+      otherPlayersCards = widget.players.where((player) => player['name'] != widget.playerName).toList();
 
-      });
     });
     widget.socket.on('turnPlayed', (data) {
       setState(() {
-        tableCards.addEntries(data['tableCards']);
+        tableCards = data['tableCards'];
       });
     });
     widget.socket.on('error', (data) {
@@ -78,10 +81,10 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
                       left: constraints.maxWidth / 2 - 50,
                       top: constraints.maxHeight / 2 - 50,
                       child: Row(
-                        children: tableCards.entries.map((MapEntry<dynamic, dynamic> card) => InkWell(
+                        children: tableCards.map((card) => InkWell(
                           onTap: () => takeCardFromTable(card),
                           child: Card(
-                            child: Image.network(card.value['frontCardImageUrl']),
+                            child: Image.network(card['frontCardImageUrl']),
                           ),
                         )).toList(),
                       ),
@@ -90,34 +93,45 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
                     Positioned(
                       bottom: 0,
                       child: Row(
-                        children: myCards.entries.map((MapEntry<dynamic, dynamic> card) => InkWell(
-                          onTap: () => playCard(card),
-                          child: Card(
-                            child: Image.network(card.value['frontCardImageUrl']),
-                          ),
-                        )).toList(),
+                        children: [
+                          Text(widget.playerName),
+                          ...myCards.map((card) => InkWell(
+                            onTap: () => playCard(card),
+                            child: Card(
+                              child: Image.network(card['frontCardImageUrl']),
+                            ),
+                          ))
+                        ],
                       ),
                     ),
                     // Other players' cards at the top, left, and right
                     // You'll need to replace 'otherPlayersCards' with the actual data
                     Positioned(
                       top: 0,
-                      child: Row(
-                        children: otherPlayersCards[0].map((card) => Image.network(card['backCardImageUrl'])).toList(),
+                      left: 0,
+                      child: Column(
+                        children: otherPlayersCards[0]['cards'].map((card) => Card(
+                          child: Image.network(card['backCardImageUrl']),
+                        )).toList(),
                       ),
                     ),
                     if (otherPlayersCards.length > 1)
                       Positioned(
-                        left: 0,
+                        top: 0,
+                        right: 0,
                         child: Column(
-                          children: otherPlayersCards[1].map((card) => Image.network(card['backCardImageUrl'])).toList(),
+                          children: otherPlayersCards[1]['cards'].map((card) => Card(
+                            child: Image.network(card['backCardImageUrl']),
+                          )).toList(),
                         ),
                       ),
                     if (otherPlayersCards.length > 2)
                       Positioned(
-                        right: 0,
-                        child: Column(
-                          children: otherPlayersCards[2].map((card) => Image.network(card['backCardImageUrl'])).toList(),
+                        bottom: 0,
+                        child: Row(
+                          children: otherPlayersCards[2]['cards'].map((card) => Card(
+                            child: Image.network(card['backCardImageUrl']),
+                          )).toList(),
                         ),
                       ),
                   ],

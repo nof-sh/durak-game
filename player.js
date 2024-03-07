@@ -1,4 +1,4 @@
-
+const { Card } = require('./cards');
 class Player {
 
     constructor(name) {

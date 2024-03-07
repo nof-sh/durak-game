@@ -43,7 +43,7 @@ class JoinGameRoom extends StatelessWidget {
                   // When the server responds, navigate to the game room
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => JoinedGameRoomScreen(_roomIdController.text, data['numberOfPlayers'], socket)),
+                    MaterialPageRoute(builder: (context) => JoinedGameRoomScreen(playerName, _roomIdController.text, data['numberOfPlayers'], socket)),
                   );
                 });
                 socket.on('error', (data) {

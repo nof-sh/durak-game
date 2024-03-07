@@ -1,6 +1,11 @@
+import 'dart:convert';
+
+import 'package:durak_app/data_convert.dart';
+import 'package:durak_app/play_game_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:logging/logging.dart';
+
 
 final Logger _log = Logger('GameRoom');
 
@@ -27,9 +32,15 @@ class GameRoom extends StatelessWidget {
               onPressed: () {
                 // Emit 'startGame' event to the server
                 socket.emit('startGame', roomId);
-                socket.on('startGame', (data) {
+                socket.on('gameStartedNotification', (data) {
+                  Map<String, dynamic> jsonData = data is String ? jsonDecode(data) : data;
+                  GameData gameData = GameData.fromJson(jsonData);
                   // When the server responds, start the game
                   _log.info('Game started');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => PlayGameScreen(gameData, gameData.players, gameData.trumpCard, gameData.pot, gameData.firstPlayer, roomId, socket, playerName)),
+                  );
                 });
               },
             ),
@@ -55,10 +66,11 @@ class GameRoom extends StatelessWidget {
 
 class JoinedGameRoomScreen extends StatefulWidget {
   final String roomId;
+  final String playerName;
   final int numberOfUsersInRoom;
   final io.Socket socket;
 
-  const JoinedGameRoomScreen(this.roomId, this.numberOfUsersInRoom, this.socket, {super.key});
+  const JoinedGameRoomScreen(this.playerName, this.roomId, this.numberOfUsersInRoom, this.socket, {super.key});
   
   @override
   State<JoinedGameRoomScreen> createState() => _JoinedGameRoomScreenState();
@@ -81,8 +93,15 @@ class _JoinedGameRoomScreenState extends State<JoinedGameRoomScreen> {
         numberOfUsers = data['numberOfPlayers'];
       });
     });
-    widget.socket.on('startGame', (data) {
-      // Navigate to the game screen
+    widget.socket.on('gameStartedNotification', (data) {
+      Map<String, dynamic> jsonData = data is String ? jsonDecode(data) : data;
+      GameData gameData = GameData.fromJson(jsonData);
+      // When the server responds, start the game
+      _log.info('Game started');
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => PlayGameScreen(gameData, gameData.players, gameData.trumpCard, gameData.pot, gameData.firstPlayer, widget.roomId, widget.socket, widget.playerName)),
+      );
     });
     widget.socket.on('roomDeletedNotification', (data) {
       // Navigate to the main menu

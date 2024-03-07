@@ -1,6 +1,7 @@
 
 const e = require('express');
 const { Deck } = require('./cards');
+const { Card } = require('./cards');
 const { Player } = require('./player');
 
 
@@ -265,7 +266,7 @@ class Game {
         return {
             players: this.players.map(player => player.toObject()),
             currentPlayerIndex: this.currentPlayerIndex,
-            firstPlayerToStart: this.firstPlayer,
+            firstPlayer: this.firstPlayer,
             pot: this.pot.toObject(),
             trumpCard: this.trumpCard.toObject(),
             board: this.cardsOnTable.map(card => card.toObject()),
