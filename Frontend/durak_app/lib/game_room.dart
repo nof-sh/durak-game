@@ -1,6 +1,4 @@
-import 'dart:convert';
-
-import 'package:durak_app/data_convert.dart';
+// This file contains the create game room screen and the joined game room screen
 import 'package:durak_app/play_game_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
@@ -33,13 +31,11 @@ class GameRoom extends StatelessWidget {
                 // Emit 'startGame' event to the server
                 socket.emit('startGame', roomId);
                 socket.on('gameStartedNotification', (data) {
-                  Map<String, dynamic> jsonData = data is String ? jsonDecode(data) : data;
-                  GameData gameData = GameData.fromJson(jsonData);
                   // When the server responds, start the game
                   _log.info('Game started');
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => PlayGameScreen(gameData, gameData.players, gameData.trumpCard, gameData.pot, gameData.firstPlayer, roomId, socket, playerName)),
+                    MaterialPageRoute(builder: (context) => PlayGameScreen(data, playerName, roomId, socket)),
                   );
                 });
               },
@@ -94,13 +90,11 @@ class _JoinedGameRoomScreenState extends State<JoinedGameRoomScreen> {
       });
     });
     widget.socket.on('gameStartedNotification', (data) {
-      Map<String, dynamic> jsonData = data is String ? jsonDecode(data) : data;
-      GameData gameData = GameData.fromJson(jsonData);
       // When the server responds, start the game
       _log.info('Game started');
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => PlayGameScreen(gameData, gameData.players, gameData.trumpCard, gameData.pot, gameData.firstPlayer, widget.roomId, widget.socket, widget.playerName)),
+        MaterialPageRoute(builder: (context) => PlayGameScreen(data, widget.playerName, widget.roomId, widget.socket)),
       );
     });
     widget.socket.on('roomDeletedNotification', (data) {
