@@ -14,19 +14,18 @@ class JoinRoomData {
 }
 
 
-class GameData {
+class StartGameData {
   List<dynamic> players;
-  List<dynamic> tableCards;
-  List<dynamic> trumpCard;
-  List<dynamic> pot;
+  Map<String, dynamic> trumpCard;
+  Map<String, dynamic> pot;
 
 
-  GameData({required this.players, required this.tableCards, required this.trumpCard, required this.pot});
 
-  factory GameData.fromJson(Map<String, dynamic> json) {
-    return GameData(
+  StartGameData({required this.players, required this.trumpCard, required this.pot});
+
+  factory StartGameData.fromJson(Map<String, dynamic> json) {
+    return StartGameData(
       players: json['players'],
-      tableCards: json['tableCards'],
       trumpCard: json['trumpCard'],
       pot: json['pot'],
     );

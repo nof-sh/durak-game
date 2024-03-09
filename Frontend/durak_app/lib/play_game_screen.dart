@@ -24,9 +24,9 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
   List<dynamic> myCards = [];
   List<dynamic> otherPlayers = [];
   List<dynamic> otherPlayersCards = [];
-  List<dynamic> pot = [];
-  List<dynamic> trumpCard = [];
-  List<dynamic> myPlayerObject = [];
+  Map<String, dynamic> pot = {};
+  Map<String, dynamic> trumpCard = {};
+  Map<String, dynamic> myPlayerObject = {};
   
 
 
@@ -35,14 +35,14 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
   void initState() {
     super.initState();
     setState(() {
-      GameData gameObject = GameData.fromJson(widget.gameData);
-      tableCards = gameObject.tableCards;
+      StartGameData gameObject = StartGameData.fromJson(widget.gameData);
+      tableCards = [];
       pot = gameObject.pot;
       trumpCard = gameObject.trumpCard;
       myPlayerObject = gameObject.players.firstWhere((player) => player['name'] == widget.playerName);
-      myCards = gameObject.players.firstWhere((player) => player['name'] == widget.playerName)['cards'];
+      myCards = gameObject.players.firstWhere((player) => player['name'] == widget.playerName)['hand'];
       otherPlayers = gameObject.players.where((player) => player['name'] != widget.playerName).toList();
-      otherPlayersCards = otherPlayers.map((player) => player['cards']).toList();
+      otherPlayersCards = otherPlayers.map((player) => player['hand']).toList();
 
  
     });
@@ -80,18 +80,18 @@ Widget build(BuildContext context) {
                     child: Column(
                       children: [
                         const Text('Trump card'),
-                        Image.network(trumpCard.firstWhere((cardImage) => cardImage['frontCardImageUrl'])),
+                        Image.network(trumpCard['frontCardImageUrl']),
                         const Text('Table cards'),
-                        ...tableCards.map((card) => InkWell(
+                        ...tableCards.isNotEmpty ? tableCards.map((card) => InkWell(
                           onTap: () => takeCardFromTable(card),
                           child: Card(
                             child: Image.network(card['frontCardImageUrl']),
                           ),
-                        )),
+                        )).toList() : [],
                         const Text('Pot'),
-                        ...pot.map((card) => Card(
+                        ...pot['cards'].map((card) => Card(
                           child: Image.network(card['frontCardImageUrl']),
-                        )),
+                        )).toList(),
                       ],
                     ),
                   ),
@@ -108,24 +108,37 @@ Widget build(BuildContext context) {
                     ),
                   ),
                   // Other players' cards at the top, left, and right
-                  // You'll need to replace 'otherPlayersCards' with the actual data
-                  Stack(
-                    children: otherPlayers.map((player) {
-                      var index = otherPlayers.indexOf(player);
-                      return Positioned(
-                        top: index == 0 ? 0 : null,
-                        bottom: index == 1 ? 0 : null,
-                        left: index == 2 ? 0 : null,
-                        right: index == 3 ? 0 : null,
-                        child: Row(
-                          children: player['cards'].map((card) => Card(
-                            child: Image.network(card['backCardImageUrl']),
-                          )).toList(),
-                        ),
-                      );
-                    }).toList(),
+                  Positioned(
+                    top: 0,
+                    child: Row(
+                      children: otherPlayersCards.map((cards) => Column(
+                        children: cards.map((card) => Card(
+                          child: Image.network(card['backCardImageUrl']),
+                        )).toList(),
+                      )).toList(),
+                    ),
                   ),
-                ],
+                  if (otherPlayers.length > 1) Positioned(
+                    left: 0,
+                    child: Column(
+                      children: otherPlayersCards.map((cards) => Row(
+                        children: cards.map((card) => Card(
+                          child: Image.network(card['backCardImageUrl']),
+                        )).toList(),
+                      )).toList(),
+                    ),
+                  ),
+                  if (otherPlayers.length > 2) Positioned(
+                    right: 0,
+                    child: Column(
+                      children: otherPlayersCards.map((cards) => Row(
+                        children: cards.map((card) => Card(
+                          child: Image.network(card['backCardImageUrl']),
+                        )).toList(),
+                      )).toList(),
+                    ),
+                  ),
+                ].toList(),
               );
             },
           ),
