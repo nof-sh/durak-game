@@ -83,14 +83,13 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
                               alignment: Alignment.center,
                               children: [
                                 const Text('Pot'),
-                                ...pot['cards'].map<Widget>((card) => Card(
-                                  child: Image.network(
+                                ...pot['cards'].map<Widget>((card) => Image.network(
                                     serverUrl + card['backCardImageUrl'],
-                                    width: cardWidth * 0.9,
-                                    height: cardHeight * 0.9,
+                                    width: cardWidth * 1.7,
+                                    height: cardHeight * 1.7,
                                     fit: BoxFit.contain,
                                   ),
-                                )).toList(),
+                                ).toList(),
                               ],
                             ),
                           ),
@@ -103,8 +102,8 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
                                 const Text('Trump card'),
                                 Image.network(
                                   serverUrl + trumpCard['frontCardImageUrl'],
-                                  width: cardWidth,
-                                  height: cardHeight,
+                                  width: cardWidth * 1.7,
+                                  height: cardHeight * 1.7,
                                   fit: BoxFit.contain,
                                 ),
                               ],
