@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const admin = require('firebase-admin');
 const serviceAccount = require('./serviceAccountKey.json');
 const { Game } = require('./initGame.js');
@@ -18,6 +19,8 @@ admin.initializeApp({
 
 // Initialize Firestore
 const db = admin.firestore();
+
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
 
 io.on('connection', (socket) => {
