@@ -28,6 +28,7 @@ class StartGameData {
       players: json['players'],
       trumpCard: json['trumpCard'],
       pot: json['pot'],
+  
     );
   }
 }

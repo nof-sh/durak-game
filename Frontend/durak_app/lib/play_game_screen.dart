@@ -5,6 +5,7 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:durak_app/data_convert.dart';
 
 final serverUrl = Platform.isAndroid? 'http://10.0.2.2:3000/' : Platform.isIOS? 'http://127.0.0.1:3000/' : 'http://localhost:3000/';
+const cardSizeImage = 1.5;
 
 class PlayGameScreen extends StatefulWidget {
   final String playerName;
@@ -39,6 +40,22 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
       myCards = gameObject.players.firstWhere((player) => player['name'] == widget.playerName)['hand'];
       otherPlayers = gameObject.players.map((player) => player).where((player) => player['name'] != widget.playerName).toList();
       otherPlayersCards = otherPlayers.map((player) => player['hand']).toList();
+    });
+
+    // Listen for game updates from the server
+    widget.socket.on('gameUpdate', (data) {
+      // Update the game state
+      // i need to do more work on this part in the server and in the gameData class to make it work.
+      setState(() {
+        StartGameData updatedGameObject = StartGameData.fromJson(data);
+        tableCards = [];
+        pot = updatedGameObject.pot;
+        trumpCard = updatedGameObject.trumpCard;
+        myPlayerObject = updatedGameObject.players.firstWhere((player) => player['name'] == widget.playerName);
+        myCards = updatedGameObject.players.firstWhere((player) => player['name'] == widget.playerName)['hand'];
+        otherPlayers = updatedGameObject.players.map((player) => player).where((player) => player['name'] != widget.playerName).toList();
+        otherPlayersCards = otherPlayers.map((player) => player['hand']).toList();
+      });
     });
 
     widget.socket.on('error', (data) {
@@ -76,23 +93,6 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[
-                          // Pot in the middle of the screen on the left side
-                          Expanded(
-                            flex: 1,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                const Text('Pot'),
-                                ...pot['cards'].map<Widget>((card) => Image.network(
-                                    serverUrl + card['backCardImageUrl'],
-                                    width: cardWidth * 1.7,
-                                    height: cardHeight * 1.7,
-                                    fit: BoxFit.contain,
-                                  ),
-                                ).toList(),
-                              ],
-                            ),
-                          ),
                           // Trump card on the left side of the pot
                           Expanded(
                             flex: 1,
@@ -102,11 +102,31 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
                                 const Text('Trump card'),
                                 Image.network(
                                   serverUrl + trumpCard['frontCardImageUrl'],
-                                  width: cardWidth * 1.7,
-                                  height: cardHeight * 1.7,
+                                  width: cardWidth * cardSizeImage,
+                                  height: cardHeight * cardSizeImage,
                                   fit: BoxFit.contain,
                                 ),
                               ],
+                            ),
+                          ),
+                          // Pot in the middle of the screen on the left side
+                          Expanded(
+                            flex: 1,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: pot['cards'].asMap().entries.map<Widget>((entry) {
+                                int idx = entry.key;
+                                var card = entry.value;
+                                return Transform.translate(
+                                  offset: Offset(idx * 1.0, 0), // Adjust the multiplier as needed
+                                  child: Image.network(
+                                    serverUrl + card['backCardImageUrl'],
+                                    width: cardWidth * cardSizeImage,
+                                    height: cardHeight * cardSizeImage,
+                                    fit: BoxFit.contain,
+                                  ),
+                                );
+                              }).toList(),
                             ),
                           ),
                           // Game table in the middle of the screen on the right side
@@ -118,15 +138,18 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
                                 const Text('Table cards'),
                                 ...tableCards.isNotEmpty ? tableCards.map((card) => InkWell(
                                   onTap: () => takeCardFromTable(card),
-                                  child: Card(
-                                    child: Image.network(
-                                      serverUrl + card['frontCardImageUrl'],
-                                      width: cardWidth,
-                                      height: cardHeight,
-                                      fit: BoxFit.contain,
-                                    ),
+                                  child:
+                                      Padding(
+                                        padding: const EdgeInsets.all(6.0),
+                                        child: Image.network(
+                                          serverUrl + card['frontCardImageUrl'],
+                                          width: cardWidth * cardSizeImage,
+                                          height: cardHeight * cardSizeImage,
+                                          fit: BoxFit.contain,
+                                        ),
+                                      ),
                                   ),
-                                )).toList() : [],
+                                ).toList() : [],
                               ],
                             ),
                           ),
@@ -138,59 +161,41 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
                         child: Row(
                           children: myCards.map((card) => InkWell(
                             onTap: () => playCard(card),
-                            child: Card(
-                              child: Image.network(
-                                serverUrl + card['frontCardImageUrl'],
-                                width: cardWidth,
-                                height: cardHeight,
-                                fit: BoxFit.contain,
-                              ),
+                            child:
+                                Padding(
+                                  padding: const EdgeInsets.all(2.0),
+                                  child: Image.network(
+                                    serverUrl + card['frontCardImageUrl'],
+                                    width: cardWidth * cardSizeImage,
+                                    height: cardHeight * cardSizeImage,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
                             ),
-                          )).toList(),
+                          ).toList(),
                         ),
                       ),
-                      // Other players' cards at the top, left, and right
+                      // Other players' cards at the top
                       Positioned(
                         top: 0,
                         child: Row(
-                          children: (otherPlayersCards[0] ?? []).map<Widget>((card) => InkWell(
-                            child: Card(
-                              child: Image.network(
-                                serverUrl + card['backCardImageUrl'],
-                                width: cardWidth,
-                                height: cardHeight,
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                          )).toList(),
-                        ),
-                      ),
-                      if (otherPlayers.length > 1) Positioned(
-                        left: 0,
-                        child: Row(
-                          children: (otherPlayersCards[1] ?? []).map<Widget>((card) => InkWell(
-                            child: Card(
-                              child: Image.network(
-                                serverUrl + card['backCardImageUrl'],
-                                width: cardWidth,
-                                height: cardHeight,
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                          )).toList(),
-                        ),
-                      ),
-                      if (otherPlayers.length > 2) Positioned(
-                        right: 0,
-                        child: Row(
-                          children: (otherPlayersCards[2] ?? []).map<Widget>((card) => InkWell(
-                            child: Card(
-                              child: Image.network(
-                                serverUrl + card['backCardImageUrl'],
-                                width: cardWidth,
-                                height: cardHeight,
-                                fit: BoxFit.contain,
-                              ),
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: otherPlayersCards.map((playerCards) => Padding(
+                            padding: const EdgeInsets.all(8.0), // Add space around each player's cards
+                            child: Stack(
+                              children: (playerCards ?? []).asMap().entries.map<Widget>((entry) {
+                                int idx = entry.key;
+                                var card = entry.value;
+                                return Transform.translate(
+                                  offset: Offset(idx * 2.0, 0), // Adjust the multiplier as needed
+                                  child: Image.network(
+                                    serverUrl + card['backCardImageUrl'],
+                                    width: cardWidth * cardSizeImage, // Increase the width as needed
+                                    height: cardHeight * cardSizeImage, // Increase the height as needed
+                                    fit: BoxFit.contain,
+                                  ),
+                                );
+                              }).toList(),
                             ),
                           )).toList(),
                         ),
