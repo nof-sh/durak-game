@@ -27,6 +27,7 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
   Map<String, dynamic> pot = {};
   Map<String, dynamic> trumpCard = {};
   Map<String, dynamic> myPlayerObject = {};
+  String correntPlayerName = "";
 
   @override
   void initState() {
@@ -40,6 +41,7 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
       myCards = gameObject.players.firstWhere((player) => player['name'] == widget.playerName)['hand'];
       otherPlayers = gameObject.players.map((player) => player).where((player) => player['name'] != widget.playerName).toList();
       otherPlayersCards = otherPlayers.map((player) => player['hand']).toList();
+      correntPlayerName = gameObject.players[gameObject.currentPlayerIndex]['name']; 
     });
 
     // Listen for game updates from the server
@@ -55,6 +57,7 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
         myCards = updatedGameObject.players.firstWhere((player) => player['name'] == widget.playerName)['hand'];
         otherPlayers = updatedGameObject.players.map((player) => player).where((player) => player['name'] != widget.playerName).toList();
         otherPlayersCards = otherPlayers.map((player) => player['hand']).toList();
+        correntPlayerName = updatedGameObject.players[updatedGameObject.currentPlayerIndex]['name'];
       });
     });
 
@@ -79,7 +82,13 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Game Room ${widget.roomId}'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text('Game Room ${widget.roomId}'),
+            Text('Player: $correntPlayerName', style: const TextStyle(fontSize: 14)),
+          ],
+        ),
       ),
       body: Container(
         color: const Color.fromARGB(255, 83, 185, 180),

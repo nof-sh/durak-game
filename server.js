@@ -22,6 +22,7 @@ const db = admin.firestore();
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
+let game;
 
 io.on('connection', (socket) => {
   socket.on('playerName', (playerName) => {
@@ -96,6 +97,7 @@ io.on('connection', (socket) => {
     await roomRef.update({ 
         players: admin.firestore.FieldValue.arrayRemove(playerId) // remove player from the players array.
     });
+    game.removePlayer(playerId);
     console.log(`Player ${playerId} has left the room.\n`);
     socket.leave(roomId); // Remove the client from the room
     socket.emit('leftRoom', { message: 'Successfully left room' });
@@ -120,17 +122,23 @@ io.on('connection', (socket) => {
   });
 
   // Listen for 'playCard' event to play a card
-  socket.on('playCard', async (roomId, player, card) => {
+  socket.on('playCard', async (data) => {
     try {
-      let playCard = Game.playCard(player, card);
-      if (playCard === true){
+      let playCard = game.playCard(data['player'], data['card']);
+      let winner = game.getWinner();
+      if (playCard.status == 1 && winner !== null){
         console.log('Card played successfully');
-        socket.emit('cardPlayed', { message: 'Card played successfully' });
+        socket.emit('gameUpdate', playCard.message);
         // Notify all clients in the room that a card has been played
-        io.to(roomId).emit('cardPlayedNotification', { player: player, card: card });
-      }else{
+        io.to(roomId).emit('cardPlayedNotification', { player: data['player'], card: data['card']});
+      }else if( playCard.status == 0 ){
         console.log('It is not your turn or the move is not legal.');
         socket.emit('error', { error: 'It is not your turn or the move is not legal.' });
+      }else if (winner !== null){
+        console.log('The game has ended');
+        socket.emit('gameUpdate', { message: 'We have a winner!', winner: winner });
+        // Notify all clients in the room that the game has ended
+        io.to(roomId).emit('gameEndedNotification', { message: 'The game has ended' });
       }     
     } catch (error) {
       console.error('Error playing card: ', error);
@@ -141,11 +149,16 @@ io.on('connection', (socket) => {
   // Listen for 'takeCardsFromTable' event to take cards from table
   socket.on('takeCardsFromTable', async (roomId, player) => {
     try {
-      Game.takeCardsFromTable(player);
-      console.log('Cards from Table added successfully');
-      socket.emit('cardsTaken', { message: 'Cards from Table added successfully' });
-      // Notify all clients in the room that cards have been taken from the table
-      io.to(roomId).emit('cardsTakenNotification', { player: player });
+      let result = game.takeCardsFromTable(player);
+      if (result.status == 1){
+        console.log('Cards from Table added successfully');
+        socket.emit('gameUpdate', { message: 'Cards from Table added successfully' });
+        // Notify all clients in the room that cards have been taken from the table
+        io.to(roomId).emit('cardsTakenNotification', { player: player });
+      }else{
+        console.log(result.message);
+        socket.emit('error', { message: result.message });
+      }
     } catch (error) {
       console.error('Error taking cards from table: ', error);
       socket.emit('error', { error: error.message });
@@ -170,7 +183,7 @@ io.on('connection', (socket) => {
     if (roomData.players && roomData.players.length > 0) {
       // Initialize a new game with the players in the room
       let players = Array.from(roomData.players);
-      let game = new Game();
+      game = new Game();
       game.startNewGame(players);
       // Convert the game object to a plain JavaScript object (for saving to Firestore).
       if (game) {
@@ -213,7 +226,7 @@ io.on('connection', (socket) => {
       });
 
       console.log('Turn ended successfully');
-      socket.emit('turnEnded', { message: 'Turn ended successfully' });
+      socket.emit('gameUpdate', { message: 'Turn ended successfully' });
       // Notify all clients in the room that the turn has ended
       io.to(roomId).emit('turnEndedNotification', { message: 'Turn ended' });
     } catch (error) {

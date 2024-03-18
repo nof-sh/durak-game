@@ -16,6 +16,7 @@ class Game {
       this.currentPlayerIndex = 0;
       this.firstPlayer = null;
       this.cardsOnTable = [];
+      this.winner = null;
       // other game state variables...
     }
     isLegalMove( playerCard, cardsOnTable, trumpCard, player) {
@@ -147,17 +148,17 @@ class Game {
     takeCardsFromPot(player){
         // implement the logic for taking cards from the pot
         // if the player's hand is less than 6, take cards from the pot
-        handLength = player.getHand().length;
+        let handLength = this.getCurrentPlayer().getHand().length;
         if (handLength < 6){
             // if the pot is not empty, take cards from the pot
             if (this.pot.length !== 0) {
                 let cardsToTake = this.pot.splice(0, 6 - handLength);
-                player.setHand(player.getHand().concat(cardsToTake));
+                this.getCurrentPlayer().setHand(this.getCurrentPlayer().getHand().concat(cardsToTake));
         
             }
             // if the pot is empty and the trump card is not null, take the trump card
             if (this.pot.length === 0 && this.trumpCard !== null) {
-                player.setHand(player.getHand().concat(this.trumpCard));
+                this.getCurrentPlayer().setHand(this.getCurrentPlayer().getHand().concat(this.trumpCard));
                 this.trumpCard = null;
             }
         }
@@ -183,14 +184,14 @@ class Game {
     playCard (player, card) {
         // implement the logic for playing a card.
         // if the player is not the current player, throw an error.
-        if (this.getCurrentPlayer() !== player) {
-            throw new Error('It is not your turn');
+        if (this.getCurrentPlayer().getName() != player['name']) {
+            return {status: 0, message: 'It is not your turn'};
         // else if - the move is not legal, throw an error.
-        } else if (!isLegalMove(card, this.cardsOnTable, this.trumpCard, this.getCurrentPlayer())) {
-            throw new Error('Illegal move');
+        } else if (!this.isLegalMove(card, this.cardsOnTable, this.trumpCard, this.getCurrentPlayer())) {
+            return {status: 0, message: 'Illegal move'};
         // else - the player plays the card and the turn is over.
         } else {
-            this.cardsOnTable.push(player.playCard(card));
+            this.cardsOnTable.push(this.getCurrentPlayer().playCard(card));
             // if - the player make an attack, the turn is over. and the next player need to defend.
             if (this.getCurrentPlayer().getAttack()){
                 this.getCurrentPlayer().setAttack(false);
@@ -202,28 +203,30 @@ class Game {
             }else{
                 this.getCurrentPlayer().setAttack(true);
             }
-            checkGameOver(this.players);
+            this.winner = checkGameWinner(this.players);
         }
+        return { status: 1, message: 'Card played successfully' };
     }
 
     takeCardsFromTable(player){
         // add cards to the player's hand and clear the cards on the table.
         // if - the cards on the table are empty, throw an error.
         if (this.cardsOnTable.length === 0) {
-            throw new Error('There are no cards on the table');
+            return {status: 0, message: 'There are no cards on the table'};
         // else if - the player is not the current player, throw an error.
-        }else if (this.currentPlayerIndex !== this.players.indexOf(player)) {
-            throw new Error('It is not your turn');
+        }else if (this.getCurrentPlayer().getName() != player['name']) {
+            return {status: 0, message:'It is not your turn'};
         // else if - the player is the attacker, throw an error.
         }else if (this.getCurrentPlayer().getAttack()){
-            throw new Error('You cannot take cards from the table, you must attack.');
+            return {status: 0, message: 'You cannot take cards from the table, you must attack.'};
         // else - the player takes the cards from the table and the turn is over.
         }else{
-            player.setHand(player.getHand().concat(this.cardsOnTable));
+            this.getCurrentPlayer().setHand(this.getCurrentPlayer().getHand().concat(this.cardsOnTable));
             this.cardsOnTable = [];
             this.moveToNextPlayer();
             this.getCurrentPlayer().setAttack(true);
         }
+        return {status: 1, message: 'Cards from Table added successfully'};
     }
 
     getCurrentPlayer () {
@@ -253,10 +256,33 @@ class Game {
         return this.players;
     }
 
+    removePlayer(player){
+        let index = this.players.indexOf(player);
+        if (index > -1) {
+            this.players.splice(index, 1);
+        }
+    }
+
     moveToNextPlayer() {
         this.getCurrentPlayer().setTurn(false);
         this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length;
         this.getCurrentPlayer().setTurn(true);
+    }
+
+    checkGameWinner(players){
+        // check if the game is over
+        for (let player of players) {
+            // if a player has no cards left, the game is over
+            if (player.getHand().length === 0) {
+                console.log(`${player.getPlayerName()} has no cards left. \n ${player.getPlayerName()} won the game\n!`);
+                return (player.getPlayerName()); // return the name of the player who won.
+            }
+        }
+            return false;
+    }
+
+    getWinner(){
+        return this.winner;
     }
 
 
@@ -270,6 +296,7 @@ class Game {
             pot: this.pot.toObject(),
             trumpCard: this.trumpCard.toObject(),
             board: this.cardsOnTable.map(card => card.toObject()),
+            winner: this.winner,
         };
     }
 
