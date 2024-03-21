@@ -203,7 +203,7 @@ class Game {
             }else{
                 this.getCurrentPlayer().setAttack(true);
             }
-            this.winner = checkGameWinner(this.players);
+            this.winner = this.checkGameWinner();
         }
         return { status: 1, message: 'Card played successfully' };
     }
@@ -269,11 +269,11 @@ class Game {
         this.getCurrentPlayer().setTurn(true);
     }
 
-    checkGameWinner(players){
+    checkGameWinner(){
         // check if the game is over
-        for (let player of players) {
+        for (let player of this.players) {
             // if a player has no cards left, the game is over
-            if (player.getHand().length === 0) {
+            if (player.getHand().length == 0) {
                 console.log(`${player.getPlayerName()} has no cards left. \n ${player.getPlayerName()} won the game\n!`);
                 return (player.getPlayerName()); // return the name of the player who won.
             }
@@ -295,7 +295,7 @@ class Game {
             firstPlayer: this.firstPlayer,
             pot: this.pot.toObject(),
             trumpCard: this.trumpCard.toObject(),
-            board: this.cardsOnTable.map(card => card.toObject()),
+            board: this.cardsOnTable.map(card => card ? card.toObject() : undefined),
             winner: this.winner,
         };
     }

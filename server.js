@@ -138,7 +138,7 @@ io.on('connection', (socket) => {
         console.log('The game has ended');
         socket.emit('gameUpdate', { message: 'We have a winner!', winner: winner, gameState: game.toObject()});
         // Notify all clients in the room that the game has ended
-        io.to(roomId).emit('gameEndedNotification', { message: 'The game has ended' });
+        io.to(data['roomId']).emit('gameEndedNotification', { message: 'The game has ended' });
       }     
     } catch (error) {
       console.error('Error playing card: ', error);
@@ -147,14 +147,14 @@ io.on('connection', (socket) => {
   });
 
   // Listen for 'takeCardsFromTable' event to take cards from table
-  socket.on('takeCardsFromTable', async (roomId, player) => {
+  socket.on('takeCardsFromTable', async (data) => {
     try {
-      let result = game.takeCardsFromTable(player);
+      let result = game.takeCardsFromTable(data['player']);
       if (result.status == 1){
         console.log('Cards from Table added successfully');
         socket.emit('gameUpdate', { message: 'Cards from Table added successfully', gameState: game.toObject()});
         // Notify all clients in the room that cards have been taken from the table
-        io.to(roomId).emit('cardsTakenNotification', { gameState: game.toObject()});
+        io.to(data['roomId']).emit('cardsTakenNotification', { gameState: game.toObject()});
       }else{
         console.log(result.message);
         socket.emit('error', { message: result.message });

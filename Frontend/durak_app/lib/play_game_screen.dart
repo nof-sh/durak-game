@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:durak_app/errors_screen.dart';
+
 import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:durak_app/data_convert.dart';
@@ -61,9 +61,27 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
       });
     });
 
+    // listen for errors from the server
     widget.socket.on('error', (data) {
-      Navigator.of(context).push(MaterialPageRoute(builder: (context) => ErrorScreen(data['message'])));
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Error'),
+            content: Text(data['message']),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
     });
+
   }
 
   void playCard(var card) {
