@@ -16,21 +16,21 @@ class Game {
       this.currentPlayerIndex = 0;
       this.firstPlayer = null;
       this.cardsOnTable = [];
-      this.winner = null;
+      this.winner = "";
       // other game state variables...
     }
-    isLegalMove( playerCard, cardsOnTable, trumpCard, player) {
+    isLegalMove( playerCard, trumpCard, player) {
         // check if the move is legal
     
-        if (player.getAttack() && cardsOnTable.length == 0) {
+        if (this.getCurrentPlayer().getAttack() && (this.cardsOnTable.length == 0)) {
             return true; // no cards on the table, so any card is legal
         }
     
-        if (cardsOnTable.length > 0) {
-            var tableSuit = cardsOnTable[cardsOnTable.length - 1].getSuit();
-            var tableRank = cardsOnTable[cardsOnTable.length - 1].getRank();
-            var playerSuit = playerCard.getSuit();
-            var playerRank = playerCard.getRank();
+        if (this.cardsOnTable.length > 0) {
+            var tableSuit = this.cardsOnTable[this.cardsOnTable.length - 1].getSuit();
+            var tableRank = this.cardsOnTable[this.cardsOnTable.length - 1].getRank();
+            var playerSuit = this.getCurrentPlayer().getHand()[playerCard].getSuit();
+            var playerRank = this.getCurrentPlayer().getHand()[playerCard].getRank();
         }
     
         // if the player is a defender, the move is legal if the player has a card of the same suit with a higher rank or trump card .
@@ -187,11 +187,12 @@ class Game {
         if (this.getCurrentPlayer().getName() != player['name']) {
             return {status: 0, message: 'It is not your turn'};
         // else if - the move is not legal, throw an error.
-        } else if (!this.isLegalMove(card, this.cardsOnTable, this.trumpCard, this.getCurrentPlayer())) {
+        } else if (!this.isLegalMove(card['rank'], card['suit'])) {
             return {status: 0, message: 'Illegal move'};
         // else - the player plays the card and the turn is over.
         } else {
-            this.cardsOnTable.push(this.getCurrentPlayer().playCard(card));
+            var playedCard = this.getCurrentPlayer().playCard(card['rank'], card['suit']);
+            this.cardsOnTable.push(new Card(playedCard['rank'], playedCard['suit'], playedCard['frontCardImageUrl'], playedCard['backCardImageUrl']));
             // if - the player make an attack, the turn is over. and the next player need to defend.
             if (this.getCurrentPlayer().getAttack()){
                 this.getCurrentPlayer().setAttack(false);
@@ -274,8 +275,8 @@ class Game {
         for (let player of this.players) {
             // if a player has no cards left, the game is over
             if (player.getHand().length == 0) {
-                console.log(`${player.getPlayerName()} has no cards left. \n ${player.getPlayerName()} won the game\n!`);
-                return (player.getPlayerName()); // return the name of the player who won.
+                console.log(`${player.getName()} has no cards left. \n ${player.getName()} won the game\n!`);
+                return (player.getName()); // return the name of the player who won.
             }
         }
             return false;
@@ -295,7 +296,7 @@ class Game {
             firstPlayer: this.firstPlayer,
             pot: this.pot.toObject(),
             trumpCard: this.trumpCard.toObject(),
-            board: this.cardsOnTable.map(card => card ? card.toObject() : undefined),
+            board: this.cardsOnTable ? this.cardsOnTable.map(card => card.toObject()) : [],
             winner: this.winner,
         };
     }

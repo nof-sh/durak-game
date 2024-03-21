@@ -126,19 +126,19 @@ io.on('connection', (socket) => {
     try {
       let playCard = game.playCard(data['player'], data['card']);
       let winner = game.getWinner();
-      if (playCard.status == 1 && winner == null){
+      if (playCard.status == 1 && winner == ""){
         console.log('Card played successfully');
-        socket.emit('gameUpdate', { message: 'Card played successfully', gameState: game.toObject()});
+        //socket.emit('gameUpdate', { message: 'Card played successfully', gameState: game.toObject()});
         // Notify all clients in the room that a card has been played
-        io.to(roomId).emit('gameUpdate', { gameState: game.toObject() });
-      }else if( playCard.status == 0 ){
+        io.to(data['roomId']).emit('gameUpdate', { gameState: game.toObject() });
+      }else if( playCard.status == 0 && winner == ""){
         console.log('It is not your turn or the move is not legal.');
-        socket.emit('error', { error: 'It is not your turn or the move is not legal.' });
-      }else if (winner !== null){
+        socket.emit('error', { error: playCard.message});
+      }else if (winner != ""){
         console.log('The game has ended');
         socket.emit('gameUpdate', { message: 'We have a winner!', winner: winner, gameState: game.toObject()});
         // Notify all clients in the room that the game has ended
-        io.to(data['roomId']).emit('gameEndedNotification', { message: 'The game has ended' });
+        socket.emit('gameEndedNotification', { message: 'The game has ended' });
       }     
     } catch (error) {
       console.error('Error playing card: ', error);

@@ -7,12 +7,12 @@ class Player {
         this.turn = false;
         this.attack = false;
     }
-    playCard(card) {
+    playCard(cardRnk, cardSuit) {
         // remove the played card from the player's hand
-        let index = this.hand.indexOf(card);
+        let index = this.hand.findIndex(card => ((card.getRank() == cardRnk) && (card.getSuit() == cardSuit)));
         if (index > -1) {
-            this.hand.splice(index, 1);
-            return card;
+           return this.hand.splice(index, 1);
+            
         }
     }
     addPoints(points) {

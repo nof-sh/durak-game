@@ -20,7 +20,7 @@ class PlayGameScreen extends StatefulWidget {
 }
 
 class _PlayGameScreenState extends State<PlayGameScreen> {
-  List<dynamic> tableCards = [];
+  Map<String, dynamic> tableCards = {};
   List<dynamic> myCards = [];
   List<dynamic> otherPlayers = [];
   List<dynamic> otherPlayersCards = [];
@@ -29,12 +29,13 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
   Map<String, dynamic> myPlayerObject = {};
   String correntPlayerName = "";
 
+
   @override
   void initState() {
     super.initState();
     setState(() {
       StartGameData gameObject = StartGameData.fromJson(widget.gameData);
-      tableCards = [];
+      tableCards = gameObject.tableCards;
       pot = gameObject.pot;
       trumpCard = gameObject.trumpCard;
       myPlayerObject = gameObject.players.firstWhere((player) => player['name'] == widget.playerName);
@@ -42,6 +43,7 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
       otherPlayers = gameObject.players.map((player) => player).where((player) => player['name'] != widget.playerName).toList();
       otherPlayersCards = otherPlayers.map((player) => player['hand']).toList();
       correntPlayerName = gameObject.players[gameObject.currentPlayerIndex]['name']; 
+      
     });
 
     // Listen for game updates from the server
@@ -49,8 +51,8 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
       // Update the game state
       // i need to do more work on this part in the server and in the gameData class to make it work.
       setState(() {
-        StartGameData updatedGameObject = StartGameData.fromJson(data);
-        tableCards = [];
+        StartGameData updatedGameObject = StartGameData.fromJson(data['gameState']);
+        tableCards = updatedGameObject.tableCards;
         pot = updatedGameObject.pot;
         trumpCard = updatedGameObject.trumpCard;
         myPlayerObject = updatedGameObject.players.firstWhere((player) => player['name'] == widget.playerName);
@@ -58,6 +60,7 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
         otherPlayers = updatedGameObject.players.map((player) => player).where((player) => player['name'] != widget.playerName).toList();
         otherPlayersCards = otherPlayers.map((player) => player['hand']).toList();
         correntPlayerName = updatedGameObject.players[updatedGameObject.currentPlayerIndex]['name'];
+        
       });
     });
 
@@ -96,7 +99,7 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     final cardWidth = screenSize.width / 10;
-    final cardHeight = screenSize.height / 5;
+    final cardHeight = screenSize.height / 10;
 
     return Scaffold(
       appBar: AppBar(
@@ -104,7 +107,7 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text('Game Room ${widget.roomId}'),
-            Text('Player: $correntPlayerName', style: const TextStyle(fontSize: 14)),
+            Text('it\'s $correntPlayerName Turn', style: const TextStyle(fontSize: 14)),
           ],
         ),
       ),
@@ -158,25 +161,23 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
                           ),
                           // Game table in the middle of the screen on the right side
                           Expanded(
-                            flex: 2,
+                            flex: 3,
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 const Text('Table cards'),
-                                ...tableCards.isNotEmpty ? tableCards.map((card) => InkWell(
-                                  onTap: () => takeCardFromTable(card),
-                                  child:
-                                      Padding(
-                                        padding: const EdgeInsets.all(6.0),
-                                        child: Image.network(
-                                          serverUrl + card['frontCardImageUrl'],
-                                          width: cardWidth * cardSizeImage,
-                                          height: cardHeight * cardSizeImage,
-                                          fit: BoxFit.contain,
-                                        ),
-                                      ),
+                                ...tableCards.isNotEmpty ? tableCards['cards'].asMap().entries.map<Widget>((entry) => InkWell(
+                                  onTap: () => takeCardFromTable(entry.value),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Image.network(
+                                      serverUrl + (entry.value['frontCardImageUrl'] ?? ''),
+                                      width: cardWidth * cardSizeImage,
+                                      height: cardHeight * cardSizeImage,
+                                      fit: BoxFit.contain,
+                                    ),
                                   ),
-                                ).toList() : [],
+                                )).toList() : [],
                               ],
                             ),
                           ),
