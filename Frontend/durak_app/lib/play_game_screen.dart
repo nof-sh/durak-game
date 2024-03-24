@@ -20,7 +20,7 @@ class PlayGameScreen extends StatefulWidget {
 }
 
 class _PlayGameScreenState extends State<PlayGameScreen> {
-  Map<String, dynamic> tableCards = {};
+  List<dynamic> tableCards = [];
   List<dynamic> myCards = [];
   List<dynamic> otherPlayers = [];
   List<dynamic> otherPlayersCards = [];
@@ -166,12 +166,12 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 const Text('Table cards'),
-                                ...tableCards.isNotEmpty ? tableCards['cards'].asMap().entries.map<Widget>((entry) => InkWell(
-                                  onTap: () => takeCardFromTable(entry.value),
+                                ...tableCards.isNotEmpty ? tableCards.map((card) => InkWell(
+                                  onTap: () => takeCardFromTable(card),
                                   child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
+                                    padding: const EdgeInsets.all(2.0),
                                     child: Image.network(
-                                      serverUrl + (entry.value['frontCardImageUrl'] ?? ''),
+                                      serverUrl + (card['frontCardImageUrl']),
                                       width: cardWidth * cardSizeImage,
                                       height: cardHeight * cardSizeImage,
                                       fit: BoxFit.contain,

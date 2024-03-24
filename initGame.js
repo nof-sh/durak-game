@@ -19,7 +19,7 @@ class Game {
       this.winner = "";
       // other game state variables...
     }
-    isLegalMove( playerCard, trumpCard, player) {
+    isLegalMove( cardRnk, cardSuit) {
         // check if the move is legal
     
         if (this.getCurrentPlayer().getAttack() && (this.cardsOnTable.length == 0)) {
@@ -29,16 +29,15 @@ class Game {
         if (this.cardsOnTable.length > 0) {
             var tableSuit = this.cardsOnTable[this.cardsOnTable.length - 1].getSuit();
             var tableRank = this.cardsOnTable[this.cardsOnTable.length - 1].getRank();
-            var playerSuit = this.getCurrentPlayer().getHand()[playerCard].getSuit();
-            var playerRank = this.getCurrentPlayer().getHand()[playerCard].getRank();
+            
         }
     
         // if the player is a defender, the move is legal if the player has a card of the same suit with a higher rank or trump card .
-        if(!player.getAttack()){
-            if (tableSuit === playerSuit) {
-                return playerRank > tableRank; // can only play a card of the same suit with a higher rank
+        if(!this.getCurrentPlayer().getAttack() && this.getCurrentPlayer().getTurn()){
+            if (tableSuit == cardSuit) {
+                return (cardRnk > tableRank); // can only play a card of the same suit with a higher rank
             // else if the player has a trump card, the move is legal.
-            } else if (playerSuit === trumpCard.getSuit()) { 
+            } else if (cardSuit == this.trumpCard.getSuit()) { 
                 return true; // can play any trump card
             // else the player doesn't have a card of the same suit of card on table or a trump card, the move is illegal.
             } else {
@@ -192,7 +191,7 @@ class Game {
         // else - the player plays the card and the turn is over.
         } else {
             var playedCard = this.getCurrentPlayer().playCard(card['rank'], card['suit']);
-            this.cardsOnTable.push(new Card(playedCard['rank'], playedCard['suit'], playedCard['frontCardImageUrl'], playedCard['backCardImageUrl']));
+            this.cardsOnTable.push(new Card(playedCard.rank, playedCard.suit, playedCard.image));
             // if - the player make an attack, the turn is over. and the next player need to defend.
             if (this.getCurrentPlayer().getAttack()){
                 this.getCurrentPlayer().setAttack(false);

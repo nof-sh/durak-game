@@ -11,7 +11,8 @@ class Player {
         // remove the played card from the player's hand
         let index = this.hand.findIndex(card => ((card.getRank() == cardRnk) && (card.getSuit() == cardSuit)));
         if (index > -1) {
-           return this.hand.splice(index, 1);
+           let card = this.hand.splice(index, 1);
+           return{ rank: card[0].getRank(), suit: card[0].getSuit(), image: card[0].getFrontCardImageUrl()};
             
         }
     }

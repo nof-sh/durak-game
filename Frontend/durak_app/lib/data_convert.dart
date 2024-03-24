@@ -18,7 +18,7 @@ class StartGameData {
   List<dynamic> players;
   Map<String, dynamic> trumpCard;
   Map<String, dynamic> pot;
-  Map<String, dynamic> tableCards;
+  List<dynamic> tableCards;
   int currentPlayerIndex;
 
 

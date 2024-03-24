@@ -128,6 +128,7 @@ io.on('connection', (socket) => {
       let winner = game.getWinner();
       if (playCard.status == 1 && winner == ""){
         console.log('Card played successfully');
+        console.log('the game state is: ', game.toObject());
         //socket.emit('gameUpdate', { message: 'Card played successfully', gameState: game.toObject()});
         // Notify all clients in the room that a card has been played
         io.to(data['roomId']).emit('gameUpdate', { gameState: game.toObject() });
