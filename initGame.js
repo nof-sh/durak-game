@@ -144,21 +144,23 @@ class Game {
 
     } 
 
-    takeCardsFromPot(player){
+    takeCardsFromPot(){
         // implement the logic for taking cards from the pot
         // if the player's hand is less than 6, take cards from the pot
-        let handLength = this.getCurrentPlayer().getHand().length;
-        if (handLength < 6){
-            // if the pot is not empty, take cards from the pot
-            if (this.pot.length !== 0) {
-                let cardsToTake = this.pot.splice(0, 6 - handLength);
-                this.getCurrentPlayer().setHand(this.getCurrentPlayer().getHand().concat(cardsToTake));
-        
-            }
-            // if the pot is empty and the trump card is not null, take the trump card
-            if (this.pot.length === 0 && this.trumpCard !== null) {
-                this.getCurrentPlayer().setHand(this.getCurrentPlayer().getHand().concat(this.trumpCard));
-                this.trumpCard = null;
+        for (let player of this.players) {
+            let handLength = player.getHand().length;
+            if (handLength < 6){
+                // if the pot is not empty, take cards from the pot
+                if (this.pot.cards.length !== 0) {
+                    let cardsToTake = this.pot.cards.splice(0, 6 - handLength);
+                    player.setHand(player.getHand().concat(cardsToTake));
+            
+                }
+                // if the pot is empty and the trump card is not null, take the trump card
+                if (this.pot.cards.length === 0 && this.trumpCard !== null) {
+                    player.setHand(player.getHand().concat(this.trumpCard));
+                    this.trumpCard = null;
+                }
             }
         }
     }
@@ -166,15 +168,13 @@ class Game {
     swapTurns () {
         // implement the logic for swapping turns
         
-        this.cardsOnTable = [];
+        //this.cardsOnTable = [];
         // the turn is over and the next player is the first player to start.
+        // and check that all the players have 6 cards in their hands - unless the pot is empty and the trump card is null.
         this.moveToNextPlayer();
         this.firstPlayerToStart = this.currentPlayerIndex;
         this.players[this.currentPlayerIndex].setAttack(true);
-        // check that all the players have 6 cards in their hands - unless the pot is empty and the trump card is null.
-        for (let player of this.players) {
-            this.takeCardsFromPot(player);
-        }
+        
             
     }
 
@@ -182,6 +182,9 @@ class Game {
 
     playCard (player, card) {
         // implement the logic for playing a card.
+        if (this.cardsOnTable.length == 2) {
+            this.cardsOnTable.length = 0;
+        }
         // if the player is not the current player, throw an error.
         if (this.getCurrentPlayer().getName() != player['name']) {
             return {status: 0, message: 'It is not your turn'};
@@ -196,12 +199,13 @@ class Game {
             if (this.getCurrentPlayer().getAttack()){
                 this.getCurrentPlayer().setAttack(false);
                 this.moveToNextPlayer();
-            // else if - If the round is over (we go back to the player who started the round). Start a new round with a new starting player
-            }else if (this.getCurrentPlayer().getAttack() === false && this.getCurrentPlayer() === this.players[this.firstPlayer]){
-                this.swapTurns();
-            // else - the player can keep play and now he naad to attack.
-            }else{
+            // else if - the player can keep play and now he need to attack.
+            }else if (this.getCurrentPlayer().getAttack() === false && this.getCurrentPlayer().getTurn() === true){
                 this.getCurrentPlayer().setAttack(true);
+                this.takeCardsFromPot();
+            // else -  If the round is over (we go back to the player who started the round). Start a new round with a new starting player
+            }else{
+                this.swapTurns();
             }
             this.winner = this.checkGameWinner();
         }
@@ -222,11 +226,12 @@ class Game {
         // else - the player takes the cards from the table and the turn is over.
         }else{
             this.getCurrentPlayer().setHand(this.getCurrentPlayer().getHand().concat(this.cardsOnTable));
-            this.cardsOnTable = [];
+            this.cardsOnTable.length = 0;
             this.moveToNextPlayer();
+            this.takeCardsFromPot();
             this.getCurrentPlayer().setAttack(true);
+            return {status: 1, message: 'Cards from Table added successfully'};
         }
-        return {status: 1, message: 'Cards from Table added successfully'};
     }
 
     getCurrentPlayer () {

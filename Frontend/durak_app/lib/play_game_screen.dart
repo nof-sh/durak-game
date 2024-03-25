@@ -92,7 +92,7 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
   }
 
   void takeCardFromTable(var card) {
-    widget.socket.emit('takeCardFromTable', { 'roomId': widget.roomId, 'player': myPlayerObject, 'card': card });
+    widget.socket.emit('takeCardsFromTable', { 'roomId': widget.roomId, 'player': myPlayerObject, 'card': card });
   }
 
   @override
@@ -186,21 +186,29 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
                       // Player's cards at the bottom
                       Positioned(
                         bottom: 0,
-                        child: Row(
-                          children: myCards.map((card) => InkWell(
-                            onTap: () => playCard(card),
-                            child:
-                                Padding(
+                        child: LayoutBuilder(
+                          builder: (BuildContext context, BoxConstraints constraints) {
+                            // Calculate the maximum number of cards per row
+                            const maxCardsPerRow = 6;
+                            final cardWidth = constraints.maxWidth / maxCardsPerRow;
+                            final cardHeight = screenSize.height / 10;
+
+                            return Wrap(
+                              direction: Axis.horizontal,
+                              children: myCards.map((card) => InkWell(
+                                onTap: () => playCard(card),
+                                child: Padding(
                                   padding: const EdgeInsets.all(2.0),
                                   child: Image.network(
                                     serverUrl + card['frontCardImageUrl'],
-                                    width: cardWidth * cardSizeImage,
-                                    height: cardHeight * cardSizeImage,
+                                    width: cardWidth,
+                                    height: cardHeight,
                                     fit: BoxFit.contain,
                                   ),
                                 ),
-                            ),
-                          ).toList(),
+                              )).toList(),
+                            );
+                          },
                         ),
                       ),
                       // Other players' cards at the top

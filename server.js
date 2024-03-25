@@ -152,10 +152,9 @@ io.on('connection', (socket) => {
     try {
       let result = game.takeCardsFromTable(data['player']);
       if (result.status == 1){
-        console.log('Cards from Table added successfully');
-        socket.emit('gameUpdate', { message: 'Cards from Table added successfully', gameState: game.toObject()});
+        console.log('Cards from Table added successfully', game.toObject());
         // Notify all clients in the room that cards have been taken from the table
-        io.to(data['roomId']).emit('cardsTakenNotification', { gameState: game.toObject()});
+        io.to(data['roomId']).emit('gameUpdate', {message: 'Cards from Table added successfully', gameState: game.toObject() });
       }else{
         console.log(result.message);
         socket.emit('error', { message: result.message });
