@@ -298,8 +298,8 @@ class Game {
             players: this.players.map(player => player.toObject()),
             currentPlayerIndex: this.currentPlayerIndex,
             firstPlayer: this.firstPlayer,
-            pot: this.pot.toObject(),
-            trumpCard: this.trumpCard.toObject(),
+            pot: this.pot ? this.pot.toObject() : [],
+            trumpCard: this.trumpCard ? this.trumpCard.toObject() : [],
             board: this.cardsOnTable ? this.cardsOnTable.map(card => card.toObject()) : [],
             winner: this.winner,
         };
