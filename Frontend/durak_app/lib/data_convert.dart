@@ -28,8 +28,8 @@ class StartGameData {
   factory StartGameData.fromJson(Map<String, dynamic> json) {
     return StartGameData(
       players: json['players'],
-      trumpCard: json['trumpCard'],
-      pot: json['pot'],
+      trumpCard: json['trumpCard'] ?? {},
+      pot: json['pot'] ?? {},
       tableCards: json['board'] ?? [],
       currentPlayerIndex: json['currentPlayerIndex'],
   

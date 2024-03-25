@@ -137,9 +137,7 @@ io.on('connection', (socket) => {
         socket.emit('error', { error: playCard.message});
       }else if (winner != ""){
         console.log('The game has ended');
-        socket.emit('gameUpdate', { message: 'We have a winner!', winner: winner, gameState: game.toObject()});
-        // Notify all clients in the room that the game has ended
-        socket.emit('gameEndedNotification', { message: 'The game has ended' });
+        io.to(data['roomId']).emit('gameUpdate', { message: 'We have a winner! \n The game has ended', winner: winner, gameState: game.toObject()});
       }     
     } catch (error) {
       console.error('Error playing card: ', error);

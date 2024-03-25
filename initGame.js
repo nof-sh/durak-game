@@ -9,15 +9,17 @@ const { Player } = require('./player');
 class Game {
 
     constructor() {
-      this.players = [];
-      this.deck = new Deck();
-      this.pot = [];
-      this.trumpCard = null;
-      this.currentPlayerIndex = 0;
-      this.firstPlayer = null;
-      this.cardsOnTable = [];
-      this.winner = "";
-      // other game state variables...
+        this.players = [];
+        this.deck = new Deck();
+        this.pot = [];
+        this.trumpCard = null;
+        this.trumpCardCopy = null; // copy of the trump card
+        this.currentPlayerIndex = 0;
+        this.firstPlayer = null;
+        this.cardsOnTable = [];
+        this.winner = "";
+        // other game state variables...
+
     }
     isLegalMove( cardRnk, cardSuit) {
         // check if the move is legal
@@ -37,7 +39,7 @@ class Game {
             if (tableSuit == cardSuit) {
                 return (cardRnk > tableRank); // can only play a card of the same suit with a higher rank
             // else if the player has a trump card, the move is legal.
-            } else if (cardSuit == this.trumpCard.getSuit()) { 
+            } else if (cardSuit == this.trumpCardCopy.getSuit()) { 
                 return true; // can play any trump card
             // else the player doesn't have a card of the same suit of card on table or a trump card, the move is illegal.
             } else {
@@ -105,7 +107,7 @@ class Game {
                 .filter(card => card.getSuit() == this.trumpCard.getSuit())
                 .sort((a,b) => a.getRank() - b.getRank())[0];
             
-            if (playerLowestTrump && playerLowestTrump.getRank() < lowestTrump) {
+            if (playerLowestTrump && (playerLowestTrump.getRank() < lowestTrump)) {
                 firstPlayer = player;
                 lowestTrump = playerLowestTrump.getRank();
             }
@@ -135,6 +137,7 @@ class Game {
             }
         }// Draw the first card from the pot and set it as the trump card
         this.trumpCard = this.setTrumpCard(); 
+        this.trumpCardCopy = this.trumpCard; // copy the trump card
         // Create the pot with the remaining cards
         this.pot = this.deck;
         
@@ -151,13 +154,14 @@ class Game {
             let handLength = player.getHand().length;
             if (handLength < 6){
                 // if the pot is not empty, take cards from the pot
-                if (this.pot.cards.length !== 0) {
+                if (this.pot.cards.length >= 6 - handLength) {
                     let cardsToTake = this.pot.cards.splice(0, 6 - handLength);
                     player.setHand(player.getHand().concat(cardsToTake));
             
-                }
-                // if the pot is empty and the trump card is not null, take the trump card
-                if (this.pot.cards.length === 0 && this.trumpCard !== null) {
+                }else if ((this.pot.cards.length < 6 - handLength) && (this.pot.cards.length != 0)){
+                    let cardsToTake = this.pot.cards.splice(0, this.pot.cards.length);
+                    player.setHand(player.getHand().concat(cardsToTake));
+                }else if (this.pot.cards.length === 0 && this.trumpCard !== null) {
                     player.setHand(player.getHand().concat(this.trumpCard));
                     this.trumpCard = null;
                 }
@@ -298,8 +302,8 @@ class Game {
             players: this.players.map(player => player.toObject()),
             currentPlayerIndex: this.currentPlayerIndex,
             firstPlayer: this.firstPlayer,
-            pot: this.pot ? this.pot.toObject() : [],
-            trumpCard: this.trumpCard ? this.trumpCard.toObject() : [],
+            pot: this.pot ? this.pot.toObject() : {},
+            trumpCard: this.trumpCard ? this.trumpCard.toObject() : {},
             board: this.cardsOnTable ? this.cardsOnTable.map(card => card.toObject()) : [],
             winner: this.winner,
         };

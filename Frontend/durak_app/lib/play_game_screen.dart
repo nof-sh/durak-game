@@ -71,7 +71,7 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
         builder: (BuildContext context) {
           return AlertDialog(
             title: const Text('Error'),
-            content: Text(data['message']),
+            content: Text(data['message'] ?? 'An error occurred'),
             actions: <Widget>[
               TextButton(
                 child: const Text('OK'),
@@ -131,7 +131,7 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
                               children: [
                                 const Text('Trump card'),
                                 Image.network(
-                                  serverUrl + trumpCard['frontCardImageUrl'],
+                                  serverUrl + (trumpCard['frontCardImageUrl'] ?? 'images/default_image.png'),
                                   width: cardWidth * cardSizeImage,
                                   height: cardHeight * cardSizeImage,
                                   fit: BoxFit.contain,
@@ -150,7 +150,7 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
                                 return Transform.translate(
                                   offset: Offset(idx * 1.0, 0), // Adjust the multiplier as needed
                                   child: Image.network(
-                                    serverUrl + card['backCardImageUrl'],
+                                    serverUrl + (card['backCardImageUrl'] ?? 'images/default_image.png'),
                                     width: cardWidth * cardSizeImage,
                                     height: cardHeight * cardSizeImage,
                                     fit: BoxFit.contain,
