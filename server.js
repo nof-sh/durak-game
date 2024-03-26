@@ -10,6 +10,10 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+let players = []; // Array to store all connected players
+let decisions = {}; // Object to store players' decisions
+
+
 app.use(express.json()); // for parsing application/json
 
 // Initialize Firebase Admin SDK
@@ -25,6 +29,9 @@ app.use('/images', express.static(path.join(__dirname, 'images')));
 let game;
 
 io.on('connection', (socket) => {
+  // When a player connects, add them to the players array
+  players.push(socket.id);
+
   socket.on('playerName', (playerName) => {
     socket.playerName = playerName;
   });
@@ -83,8 +90,8 @@ io.on('connection', (socket) => {
   });
 
   // Listen for 'leaveGameRoom' event to remove a player from a game room
-  socket.on('leaveGameRoom', async (playerId, roomId) => {
-    const roomRef = db.collection('gameRooms').doc(roomId); // point to the room document.
+  socket.on('leaveGameRoom', async (data) => {
+    const roomRef = db.collection('gameRooms').doc(data['roomId']); // point to the room document.
     const roomSnapshot = await roomRef.get(); // the room document itself.
     
     if (!roomSnapshot.exists) { // if the room does not exist.
@@ -95,14 +102,18 @@ io.on('connection', (socket) => {
     const roomData = roomSnapshot.data(); // the room data.
     // remove the player from the room.
     await roomRef.update({ 
-        players: admin.firestore.FieldValue.arrayRemove(playerId) // remove player from the players array.
+        players: admin.firestore.FieldValue.arrayRemove(data['playerId']) // remove player from the players array.
     });
-    game.removePlayer(playerId);
-    console.log(`Player ${playerId} has left the room.\n`);
-    socket.leave(roomId); // Remove the client from the room
+    game.removePlayer(data['playerId']);
+    console.log(`Player ${data['playerId']} has left the room.\n`);
+    socket.leave(data['roomId']); // Remove the client from the room
     socket.emit('leftRoom', { message: 'Successfully left room' });
     // Notify all clients in the room that a player has left
-    io.to(roomId).emit('playerLeft', { playerId: playerId });
+    io.to(data['roomId']).emit('playerLeft', { playerId: data['playerId'] });
+    // Remove player from players array
+    players = players.filter(player => player !== socket.id);
+    // Remove player's decision
+    delete decisions[socket.id];
   });
 
   // Listen for 'deleteGameRoom' event to delete a game room
@@ -137,7 +148,9 @@ io.on('connection', (socket) => {
         socket.emit('error', { error: playCard.message});
       }else if (winner != ""){
         console.log('The game has ended');
-        io.to(data['roomId']).emit('gameUpdate', { message: 'We have a winner! \n The game has ended', winner: winner, gameState: game.toObject()});
+        io.to(data['roomId']).emit('gameWinnerUpdate', { message: 'We have a winner! \n The game has ended', winner: winner, gameState: game.toObject()});
+        // Reset decisions
+        decisions = {};
       }     
     } catch (error) {
       console.error('Error playing card: ', error);
@@ -172,13 +185,14 @@ io.on('connection', (socket) => {
     if (!roomDoc.exists) {
       console.log('Cannot start game: Room does not exist');
       socket.emit('error', { error: 'Cannot start game: Room does not exist' });
+      socket.emit('navigateToMainMenu', { });
       return;
     }
 
     let roomData = roomDoc.data();
 
     // Check if the room has players
-    if (roomData.players && roomData.players.length > 0) {
+    if (roomData.players && roomData.players.length > 1) {
       // Initialize a new game with the players in the room
       let players = Array.from(roomData.players);
       game = new Game();
@@ -201,12 +215,35 @@ io.on('connection', (socket) => {
 
       } else {
         console.error('Game is undefined');
+        socket.emit('navigateToMainMenu', { });
       }
 
     } else {
       console.log('Cannot start game: Room has no players');
       socket.emit('error', { error: 'Cannot start game: Room has no players' });
+      socket.emit('navigateToMainMenu', { });
     }
+  });
+
+  // Listen for 'playAgain' event from clients
+  socket.on('playAgain', (data) => {
+    // Store the player's decision
+    decisions[socket.id] = data['decision'];
+
+    // Check if all players have made a decision
+    if (Object.keys(decisions).length === players.length) {
+      // If all players want to play again, initialize a new game
+      if (Object.values(decisions).every(decision => decision)) {
+        io.emit('startNewGame', {data: 'roomId'});
+      } else {
+        // If not all players want to play again, navigate to main menu
+        io.emit('navigateToMainMenu', {});
+      }
+    }
+  });
+
+  socket.on('ressumeGame', async (roomId) => {
+    socket.emit('gameUpdate', { gameState: game.toObject() });
   });
 
   // Listen for 'endTurn' event to end a turn
@@ -232,6 +269,8 @@ io.on('connection', (socket) => {
       socket.emit('error', { error: error.message });
     }
   });
+
+
   
 });
 

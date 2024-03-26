@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:durak_app/main_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:durak_app/data_convert.dart';
@@ -28,6 +29,7 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
   Map<String, dynamic> trumpCard = {};
   Map<String, dynamic> myPlayerObject = {};
   String correntPlayerName = "";
+  bool isErrorDialogDisplayed = false;
 
 
   @override
@@ -66,23 +68,25 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
 
     // listen for errors from the server
     widget.socket.on('error', (data) {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Error'),
-            content: Text(data['message'] ?? 'An error occurred'),
-            actions: <Widget>[
-              TextButton(
-                child: const Text('OK'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        },
-      );
+      _showErrorDialog(data['error']);
+    });
+    
+
+    // listen for the game won event
+    widget.socket.on('gameWinnerUpdate', (data) {
+      _showWinDialog(data['winner']);
+    });
+
+    // listen for the play again event, after the game ends with a winner.
+    widget.socket.on('startNewGame', (data) {
+      // start a new game with the same players and the same room.
+      widget.socket.emit('startGame', widget.roomId);
+    });
+
+    // listen for the navigate to main menu event in case the player decided he doesn't want to play again.
+    // or some of players left the room, because to play again we need all the players to be in the room.
+    widget.socket.on('navigateToMainMenu', (data) {
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => MainMenu(widget.playerName, widget.socket)));
     });
 
   }
@@ -93,6 +97,64 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
 
   void takeCardFromTable(var card) {
     widget.socket.emit('takeCardsFromTable', { 'roomId': widget.roomId, 'player': myPlayerObject, 'card': card });
+  }
+
+  void _showErrorDialog(String message) {
+    if (!isErrorDialogDisplayed) {
+      isErrorDialogDisplayed = true;
+      showDialog(
+        context: context,
+        barrierDismissible: false, // user must tap button to close dialog!
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Error'),
+            content: Text(message),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () {
+                  Navigator.of(context).pop(); // dismiss the dialog
+                  isErrorDialogDisplayed = false; // reset the flag when the dialog is dismissed
+                },
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
+  void _showWinDialog(String winner) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // user must tap button to close dialog!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Game Over - We have a winner!'),
+          content: Text('$winner won the game!'),
+          actions: <Widget>[
+            Column(
+              children: [
+                TextButton(
+                  child: const Text('Play Again'),
+                  onPressed: () {
+                    widget.socket.emit('playAgain', {'roomId': widget.roomId, 'decision': 1}); // send request to initialize a new game
+                  },
+                ),
+                const Text('You Will need to wait until all players in the room make a decisions', style: TextStyle(fontSize: 12, color: Colors.grey)), // description text
+              ],
+            ),
+            TextButton(
+              child: const Text('Main Menu'),
+              onPressed: () {
+                widget.socket.emit('leaveGameRoom', {'roomId' :widget.roomId, 'playerId': widget.playerName}); // leave the room
+                Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => MainMenu(widget.playerName, widget.socket)));
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -254,5 +316,20 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    // Remove the listeners
+    widget.socket.off('gameStateUpdate');
+    widget.socket.off('gameWinnerUpdate');
+    widget.socket.off('startNewGame');
+    widget.socket.off('navigateToMainMenu');
+    widget.socket.off('gameUpdate');
+    widget.socket.off('error');
+
+    // Remove other listeners...
+
+    super.dispose();
   }
 }
