@@ -83,7 +83,7 @@ class Game {
 
     setTrumpCard() {
         // draw the first card from the pot and set it as the trump card.
-        let randomIndex = Math.floor(Math.random() * this.deck.length);
+        let randomIndex = Math.floor(Math.random() * this.deck.getCards().length);
         return this.deck.popCard(randomIndex);
     }
 

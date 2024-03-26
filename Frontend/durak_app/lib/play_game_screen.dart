@@ -71,6 +71,9 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
       _showErrorDialog(data['error']);
     });
     
+    widget.socket.on('playerLeft', (data) {
+      _showPlayerLeftDialog(data['playerId']);
+    });
 
     // listen for the game won event
     widget.socket.on('gameWinnerUpdate', (data) {
@@ -97,6 +100,11 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
 
   void takeCardFromTable(var card) {
     widget.socket.emit('takeCardsFromTable', { 'roomId': widget.roomId, 'player': myPlayerObject, 'card': card });
+  }
+
+  void leaveGameRoom() {
+    widget.socket.emit('leaveGameRoom', {'roomId' :widget.roomId, 'playerId': widget.playerName});
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => MainMenu(widget.playerName, widget.socket)));
   }
 
   void _showErrorDialog(String message) {
@@ -129,21 +137,49 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
       context: context,
       barrierDismissible: false, // user must tap button to close dialog!
       builder: (BuildContext context) {
+        return Center(
+          child: AlertDialog(
+            title: const Text('We have a winner!'),
+            content: Text('$winner won the game'),
+            actions: <Widget>[
+              Column(
+                children: [
+                  TextButton(
+                    child: const Text('Play Again'),
+                    onPressed: () {
+                      widget.socket.emit('playAgain', {'roomId': widget.roomId, 'decision': 1}); // send request to initialize a new game
+                    },
+                  ),
+                  const Text('You Will need to wait until all players in the room make a decisions', style: TextStyle(fontSize: 12, color: Colors.grey)), // description text
+                ],
+              ),
+              Column(
+                children: [
+                  TextButton(
+                    child: const Text('Main Menu'),
+                    onPressed: () {
+                      widget.socket.emit('leaveGameRoom', {'roomId' :widget.roomId, 'playerId': widget.playerName}); // leave the room
+                      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => MainMenu(widget.playerName, widget.socket)));
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showPlayerLeftDialog(String playerId) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // user must tap button to close dialog!
+      builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Game Over - We have a winner!'),
-          content: Text('$winner won the game!'),
+          title: const Text('Game Stopped!'),
+          content: Text('$playerId left the game!'),
           actions: <Widget>[
-            Column(
-              children: [
-                TextButton(
-                  child: const Text('Play Again'),
-                  onPressed: () {
-                    widget.socket.emit('playAgain', {'roomId': widget.roomId, 'decision': 1}); // send request to initialize a new game
-                  },
-                ),
-                const Text('You Will need to wait until all players in the room make a decisions', style: TextStyle(fontSize: 12, color: Colors.grey)), // description text
-              ],
-            ),
             TextButton(
               child: const Text('Main Menu'),
               onPressed: () {
@@ -174,7 +210,7 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
         ),
       ),
       body: Container(
-        color: const Color.fromARGB(255, 83, 185, 180),
+        color: const Color.fromARGB(255, 37, 98, 95),
         child: Column(
           children: <Widget>[
             Expanded(
@@ -299,16 +335,8 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: <Widget>[
                 ElevatedButton(
-                  child: const Text('End Turn'),
-                  onPressed: () {
-                    // Implement your logic to end the turn
-                  },
-                ),
-                ElevatedButton(
                   child: const Text('Exit Game'),
-                  onPressed: () {
-                    // Implement your logic to exit the game
-                  },
+                  onPressed: () => leaveGameRoom(),
                 ),
               ],
             ),
