@@ -322,8 +322,8 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
   void dispose() {
     // Remove the listeners
     widget.socket.off('gameStateUpdate');
-    widget.socket.off('gameWinnerUpdate');
-    widget.socket.off('startNewGame');
+    
+    
     widget.socket.off('navigateToMainMenu');
     widget.socket.off('gameUpdate');
     widget.socket.off('error');
