@@ -231,7 +231,7 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Text('Trump card'),
+                                const Text('KOZAR'),
                                 Image.network(
                                   serverUrl + (trumpCard['frontCardImageUrl'] ?? 'images/default_image.png'),
                                   width: cardWidth * cardSizeImage,
@@ -288,11 +288,17 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
                       // Player's cards at the bottom
                       Positioned(
                         bottom: 0,
-                        child: Row(
-                          children: myCards.map((card) => InkWell(
-                            onTap: () => playCard(card),
-                            child:
-                                Padding(
+                        child: SizedBox(
+                          height: cardHeight * cardSizeImage, // specify the height of the ListView
+                          width: MediaQuery.of(context).size.width, // specify the width of the ListView
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: myCards.length,
+                            itemBuilder: (context, index) {
+                              var card = myCards[index];
+                              return InkWell(
+                                onTap: () => playCard(card),
+                                child: Padding(
                                   padding: const EdgeInsets.all(2.0),
                                   child: Image.network(
                                     serverUrl + card['frontCardImageUrl'],
@@ -301,8 +307,9 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
                                     fit: BoxFit.contain,
                                   ),
                                 ),
-                            ),
-                          ).toList(),
+                              );
+                            },
+                          ),
                         ),
                       ),
                       // Other players' cards at the top
@@ -353,7 +360,6 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
   @override
   void dispose() {
     // Remove the listeners
-    widget.socket.off('GameWinnerUpdate');
     widget.socket.off('playerLeft');
     widget.socket.off('navigateToMainMenu');
     widget.socket.off('gameUpdate');
