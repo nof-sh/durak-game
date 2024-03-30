@@ -147,7 +147,7 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
                   TextButton(
                     child: const Text('Play Again'),
                     onPressed: () {
-                      widget.socket.emit('playAgain', {'roomId': widget.roomId, 'decision': 1}); // send request to initialize a new game
+                      widget.socket.emit('playAgain', {'roomId': widget.roomId, 'decision': true}); // send request to initialize a new game
                     },
                   ),
                   const Text('You Will need to wait until all players in the room make a decisions', style: TextStyle(fontSize: 12, color: Colors.grey)), // description text
@@ -159,7 +159,9 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
                     child: const Text('Main Menu'),
                     onPressed: () {
                       widget.socket.emit('leaveGameRoom', {'roomId' :widget.roomId, 'playerId': widget.playerName}); // leave the room
-                      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => MainMenu(widget.playerName, widget.socket)));
+                      Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => MainMenu(widget.playerName, widget.socket)), 
+                      (Route<dynamic> route) => false,
+                      );
                     },
                   ),
                 ],
@@ -184,7 +186,9 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
               child: const Text('Main Menu'),
               onPressed: () {
                 widget.socket.emit('leaveGameRoom', {'roomId' :widget.roomId, 'playerId': widget.playerName}); // leave the room
-                Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => MainMenu(widget.playerName, widget.socket)));
+                Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => MainMenu(widget.playerName, widget.socket)), 
+                (Route<dynamic> route) => false,
+                );
               },
             ),
           ],
@@ -349,7 +353,8 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
   @override
   void dispose() {
     // Remove the listeners
-    widget.socket.off('gameStateUpdate');
+    widget.socket.off('GameWinnerUpdate');
+    widget.socket.off('playerLeft');
     widget.socket.off('navigateToMainMenu');
     widget.socket.off('gameUpdate');
     widget.socket.off('error');

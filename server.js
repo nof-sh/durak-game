@@ -5,6 +5,7 @@ const serviceAccount = require('./serviceAccountKey.json');
 const { Game } = require('./initGame.js');
 const http = require('http');
 const { Server } = require('socket.io');
+const { Socket } = require('socket.io-client');
 
 const app = express();
 const server = http.createServer(app);
@@ -225,22 +226,22 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Listen for 'playAgain' event from clients
-  socket.on('playAgain', (data) => {
-    // Store the player's decision
-    decisions[socket.id] = data['decision'];
+// Listen for 'playAgain' event from clients
+socket.on('playAgain', (data) => {
+  // Store the player's decision
+  decisions[socket.id] = data['decision'];
 
-    // Check if all players have made a decision
-    if (Object.keys(decisions).length === players.length) {
-      // If all players want to play again, initialize a new game
-      if (Object.values(decisions).every(decision => decision)) {
-        io.emit('startNewGame', {data: 'roomId'});
-      } else {
-        // If not all players want to play again, navigate to main menu
-        io.emit('navigateToMainMenu', {});
-      }
+  // Check if all players have made a decision
+  if (Object.keys(decisions).length === players.length) {
+    // If all players want to play again, initialize a new game
+    if (Object.values(decisions).every(decision => decision)) {
+      io.to(data['roomId']).emit('startNewGame', {data: data['roomId']});
+    } else {
+      // If not all players want to play again, navigate to main menu
+      io.to(data['roomId']).emit('navigateToMainMenu', {});
     }
-  });
+  }
+});
 
   socket.on('ressumeGame', async (roomId) => {
     socket.emit('gameUpdate', { gameState: game.toObject() });
