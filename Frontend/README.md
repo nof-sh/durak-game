@@ -17,6 +17,10 @@ This is the client-side code for a multiplayer game of Durak. It's built with Fl
 3. Run `flutter pub get` to install the necessary dependencies.
 4. Run `flutter run` to start the app.
 
+ an APK file in the `build/app/outputs/flutter-apk/` directory of your project.
+ You can install this APK on an Android device..
+
+
 ## Dependencies
 
 - Flutter
