@@ -66,10 +66,7 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
       });
     });
 
-    // listen for errors from the server
-    widget.socket.on('error', (data) {
-      _showErrorDialog(data['error']);
-    });
+   
     
     widget.socket.on('playerLeft', (data) {
       _showPlayerLeftDialog(data['playerId']);
@@ -107,30 +104,7 @@ class _PlayGameScreenState extends State<PlayGameScreen> {
     Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => MainMenu(widget.playerName, widget.socket)));
   }
 
-  void _showErrorDialog(String message) {
-    if (!isErrorDialogDisplayed) {
-      isErrorDialogDisplayed = true;
-      showDialog(
-        context: context,
-        barrierDismissible: false, // user must tap button to close dialog!
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Error'),
-            content: Text(message),
-            actions: <Widget>[
-              TextButton(
-                child: const Text('OK'),
-                onPressed: () {
-                  Navigator.of(context).pop(); // dismiss the dialog
-                  isErrorDialogDisplayed = false; // reset the flag when the dialog is dismissed
-                },
-              ),
-            ],
-          );
-        },
-      );
-    }
-  }
+
 
   void _showWinDialog(String winner) {
     showDialog(

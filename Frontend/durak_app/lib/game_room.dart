@@ -7,12 +7,32 @@ import 'package:logging/logging.dart';
 
 final Logger _log = Logger('GameRoom');
 
-class GameRoom extends StatelessWidget {
+class GameRoom extends StatefulWidget {
   final String playerName;
   final String roomId;
   final io.Socket socket;
 
   const GameRoom(this.playerName, this.roomId, this.socket, {super.key});
+
+  @override
+  State<GameRoom> createState() => _GameRoomState();
+}
+
+class _GameRoomState extends State<GameRoom> {
+  List<String> players = [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Listen for the 'playerJoined' event
+    widget.socket.on('playerJoined', (data) {
+      setState(() {
+        // Add the new player to the players list
+        players.add(data['playerId']);
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,13 +44,14 @@ class GameRoom extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text('Game Room # $roomId # created successfully'),
+            Text('Game Room # ${widget.roomId} # created'),
+            ...players.map((player) => Text('$player joined the game')),
             ElevatedButton(
               child: const Text('Start Game'),
               onPressed: () {
                 // Emit 'startGame' event to the server
-                socket.emit('startGame', roomId);
-                socket.on('gameStartedNotification', (data) {
+                widget.socket.emit('startGame', widget.roomId);
+                widget.socket.on('gameStartedNotification', (data) {
                     //
                     String message = data['message'];
                     Map<String, dynamic> gameData = data['data'];
@@ -39,7 +60,7 @@ class GameRoom extends StatelessWidget {
                   _log.info(message);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => PlayGameScreen(gameData, playerName, roomId, socket)),
+                    MaterialPageRoute(builder: (context) => PlayGameScreen(gameData, widget.playerName, widget.roomId, widget.socket)),
                   );
                 });
               },
@@ -48,8 +69,8 @@ class GameRoom extends StatelessWidget {
               child: const Text('Exit And Delete Game Room'),
               onPressed: () {
                 // Emit 'deleteGameRoom' event to the server
-                socket.emit('deleteGameRoom', roomId);
-                socket.on('roomDeleted', (data) {
+                widget.socket.emit('deleteGameRoom', widget.roomId);
+                widget.socket.on('roomDeleted', (data) {
                   // When the server responds, return to the main menu
                   Navigator.pop(context);
                 });
