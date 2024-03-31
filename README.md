@@ -53,4 +53,4 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 [MIT](https://choosealicense.com/licenses/mit/)
 
-![Screenshot](app_images/Screenshot 2024-03-31 at 13.33.33.png)
+![Screenshot](app_images/Screenshot.png)
